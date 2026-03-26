@@ -1,15 +1,150 @@
+/* Twitch Plus — Popup Styles */
+
 :root {
-    color-scheme: light dark;
+    --bg-primary: #0e0e10;
+    --bg-secondary: #18181b;
+    --bg-hover: #232328;
+    --text-primary: #efeff1;
+    --text-secondary: #adadb8;
+    --accent: #9147ff;
+    --accent-hover: #772ce8;
+    --border: #2f2f35;
+    --toggle-bg: #3a3a3d;
+    --toggle-active: #9147ff;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
 }
 
 body {
-    width: 100px;
-    padding: 10px;
-
-    font-family: system-ui;
-    text-align: center;
+    width: 280px;
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    font-family: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    font-size: 13px;
+    line-height: 1.4;
 }
 
-@media (prefers-color-scheme: dark) {
-    /* Dark Mode styles go here. */
+/* Header */
+.header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+}
+
+.header h1 {
+    font-size: 15px;
+    font-weight: 700;
+    color: var(--text-primary);
+}
+
+.logo {
+    border-radius: 4px;
+}
+
+/* Master toggle */
+.master-toggle {
+    padding: 8px 16px;
+    border-bottom: 1px solid var(--border);
+    background: var(--bg-secondary);
+}
+
+/* Sections */
+.section {
+    padding: 8px 16px 4px;
+    border-bottom: 1px solid var(--border);
+}
+
+.section:last-of-type {
+    border-bottom: none;
+}
+
+.section h2 {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-secondary);
+    margin-bottom: 4px;
+}
+
+/* Toggle rows */
+.toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 6px 0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.toggle-row:hover {
+    background: transparent;
+}
+
+.toggle-label {
+    color: var(--text-primary);
+    font-size: 13px;
+}
+
+/* Custom toggle switch */
+.toggle-row input[type="checkbox"] {
+    display: none;
+}
+
+.toggle-slider {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    background: var(--toggle-bg);
+    border-radius: 10px;
+    transition: background 0.2s;
+    flex-shrink: 0;
+}
+
+.toggle-slider::after {
+    content: "";
+    position: absolute;
+    top: 2px;
+    left: 2px;
+    width: 16px;
+    height: 16px;
+    background: white;
+    border-radius: 50%;
+    transition: transform 0.2s;
+}
+
+.toggle-row input[type="checkbox"]:checked + .toggle-slider {
+    background: var(--toggle-active);
+}
+
+.toggle-row input[type="checkbox"]:checked + .toggle-slider::after {
+    transform: translateX(16px);
+}
+
+/* Hint text */
+.popup-hint {
+    padding: 8px 16px;
+    color: var(--text-secondary);
+    font-size: 11px;
+    line-height: 1.4;
+    text-align: center;
+    border-bottom: 1px solid var(--border);
+}
+
+/* Footer */
+.footer {
+    padding: 8px 16px;
+    text-align: center;
+    border-top: 1px solid var(--border);
+}
+
+.version {
+    color: var(--text-secondary);
+    font-size: 11px;
 }

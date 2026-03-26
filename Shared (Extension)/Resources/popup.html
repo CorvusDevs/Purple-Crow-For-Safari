@@ -2,10 +2,181 @@
 <html>
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <link rel="stylesheet" href="popup.css">
-    <script type="module" src="popup.js"></script>
+    <script src="popup.js" defer></script>
 </head>
 <body>
-    <strong>Hello World!</strong>
+    <header class="header">
+        <img src="images/icon-48.png" alt="" class="logo" width="24" height="24">
+        <h1>Twitch Plus</h1>
+    </header>
+
+    <div class="master-toggle">
+        <label class="toggle-row">
+            <span class="toggle-label">Extension Enabled</span>
+            <input type="checkbox" id="toggle-enabled" checked>
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Emote Providers</h2>
+        <label class="toggle-row">
+            <span class="toggle-label">BetterTTV</span>
+            <input type="checkbox" id="toggle-bttv" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">FrankerFaceZ</span>
+            <input type="checkbox" id="toggle-ffz" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">7TV</span>
+            <input type="checkbox" id="toggle-7tv" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">7TV Live Sync</span>
+            <input type="checkbox" id="toggle-7tv-eventapi" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">7TV Cosmetics</span>
+            <input type="checkbox" id="toggle-7tv-cosmetics" checked>
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Chat Appearance</h2>
+        <label class="toggle-row">
+            <span class="toggle-label">Timestamps</span>
+            <input type="checkbox" id="toggle-timestamps">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Alternating Backgrounds</span>
+            <input type="checkbox" id="toggle-split">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">User Colors</span>
+            <input type="checkbox" id="toggle-usercolors">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Readable Colors</span>
+            <input type="checkbox" id="toggle-readable-colors">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">First-Time Chatter Glow</span>
+            <input type="checkbox" id="toggle-first-chatter" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Spoiler Tags</span>
+            <input type="checkbox" id="toggle-spoilers" checked>
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Chat Behavior</h2>
+        <label class="toggle-row">
+            <span class="toggle-label">Mention Highlights</span>
+            <input type="checkbox" id="toggle-mentions" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Show Deleted Messages</span>
+            <input type="checkbox" id="toggle-deleted" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Emote Tab-Completion</span>
+            <input type="checkbox" id="toggle-tab-completion" checked>
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Lurk Mode</span>
+            <input type="checkbox" id="toggle-lurk">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Player</h2>
+        <label class="toggle-row">
+            <span class="toggle-label">Audio Compressor</span>
+            <input type="checkbox" id="toggle-compressor">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Auto Theater Mode</span>
+            <input type="checkbox" id="toggle-auto-theater">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Theater OLED Black</span>
+            <input type="checkbox" id="toggle-theater-oled">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Theater Transparent Chat</span>
+            <input type="checkbox" id="toggle-theater-transparent">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Disable Autoplay</span>
+            <input type="checkbox" id="toggle-autoplay">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Automation</h2>
+        <label class="toggle-row">
+            <span class="toggle-label">Auto-Claim Points</span>
+            <input type="checkbox" id="toggle-autoclaim">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Auto-Claim Drops</span>
+            <input type="checkbox" id="toggle-autoclaim-drops">
+            <span class="toggle-slider"></span>
+        </label>
+        <label class="toggle-row">
+            <span class="toggle-label">Auto-Claim Moments</span>
+            <input type="checkbox" id="toggle-autoclaim-moments">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Moderation</h2>
+        <label class="toggle-row">
+            <span class="toggle-label">Mod Quick Actions</span>
+            <input type="checkbox" id="toggle-mod-tools">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <div class="section">
+        <h2>Interface</h2>
+        <label class="toggle-row">
+            <span class="toggle-label">Hide UI Clutter</span>
+            <input type="checkbox" id="toggle-hide-clutter">
+            <span class="toggle-slider"></span>
+        </label>
+    </div>
+
+    <p class="popup-hint">Use the crow button in chat for full settings, keyword filters, nicknames, and profiles.</p>
+
+    <footer class="footer">
+        <span class="version">v2.0</span>
+    </footer>
 </body>
 </html>

@@ -1,0 +1,909 @@
+/* Twitch Plus — Content Styles (injected into Twitch pages) */
+
+/* Third-party emotes in chat */
+.twitch-plus-emote {
+    display: inline-block;
+    vertical-align: middle;
+    margin: -5px 0;
+    height: 28px;
+    width: auto;
+    object-fit: contain;
+    cursor: pointer;
+}
+
+/* Container for zero-width emote stacking */
+.twitch-plus-emote-container {
+    position: relative;
+    display: inline-block;
+    vertical-align: middle;
+    margin: -5px 0;
+    height: 28px;
+}
+
+.twitch-plus-emote-container .twitch-plus-emote {
+    margin: 0;
+}
+
+/* Zero-width overlay emote */
+.twitch-plus-emote-zw {
+    position: absolute;
+    top: 0;
+    left: 0;
+    pointer-events: none;
+}
+
+/* Emote tooltip */
+.twitch-plus-tooltip {
+    position: fixed;
+    z-index: 10000;
+    background: #18181b;
+    border: 1px solid #3a3a3d;
+    border-radius: 6px;
+    padding: 8px 12px;
+    pointer-events: none;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.5);
+    text-align: center;
+    max-width: 200px;
+    font-family: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.twitch-plus-tooltip img {
+    display: block;
+    margin: 0 auto 6px;
+    max-width: 112px;
+    max-height: 112px;
+    image-rendering: auto;
+}
+
+.twitch-plus-tooltip .tp-tooltip-name {
+    color: #efeff1;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+}
+
+.twitch-plus-tooltip .tp-tooltip-source {
+    color: #adadb8;
+    font-size: 11px;
+    margin-top: 2px;
+}
+
+/* Chat timestamps */
+.twitch-plus-timestamp {
+    color: #adadb8;
+    font-size: 12px;
+    margin-right: 4px;
+    user-select: none;
+    font-variant-numeric: tabular-nums;
+}
+
+/* Mention highlight */
+.twitch-plus-mention-highlight {
+    background-color: rgba(255, 68, 68, 0.2) !important;
+    border-left: 3px solid #ff4444;
+    padding-left: 4px;
+}
+
+/* Consistent chat message padding for clean alternating backgrounds */
+.chat-line__message {
+    padding: 4px 20px !important;
+}
+
+/* Deleted message styling */
+.twitch-plus-deleted {
+    opacity: 0.5;
+    text-decoration: line-through;
+}
+
+/* 7TV paint — gradient username */
+.twitch-plus-paint {
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    background-clip: text;
+}
+
+/* 7TV / BTTV / FFZ badge */
+.twitch-plus-badge {
+    display: inline-block;
+    vertical-align: middle;
+    width: 18px;
+    height: 18px;
+    margin-right: 2px;
+    object-fit: contain;
+}
+
+/* ---------------------------------------------------------------------------
+   Hide UI Clutter (toggled via .tp-hide-clutter on <body>)
+   --------------------------------------------------------------------------- */
+
+/* Bits & cheering */
+.tp-hide-clutter .chat-line__message--cheer-amount,
+.tp-hide-clutter .cheer-gem-animation,
+.tp-hide-clutter [data-a-target="bits-leaderboard"],
+.tp-hide-clutter [data-test-selector="bits-leaderboard"] {
+    display: none !important;
+}
+
+/* Hype chat / elevated messages */
+.tp-hide-clutter [class*="elevated-message"],
+.tp-hide-clutter [class*="hype-chat"],
+.tp-hide-clutter [data-a-target="pinned-chat-message-highlight"] {
+    display: none !important;
+}
+
+/* Prime / sub promos & nags */
+.tp-hide-clutter [data-a-target="sub-gift-banner"],
+.tp-hide-clutter [data-a-target="prime-offer"],
+.tp-hide-clutter [class*="prime-offers"],
+.tp-hide-clutter [class*="community-highlight"],
+.tp-hide-clutter .channel-leaderboard,
+.tp-hide-clutter [data-a-target="channel-leaderboard"] {
+    display: none !important;
+}
+
+/* Watch Streaks */
+.tp-hide-clutter [class*="watch-streak"],
+.tp-hide-clutter [data-a-target="watch-streak-indicator"] {
+    display: none !important;
+}
+
+/* Community highlights & pinned messages */
+.tp-hide-clutter [class*="community-highlight-stack"],
+.tp-hide-clutter [class*="pinned-chat"] {
+    display: none !important;
+}
+
+/* Twitch Stories */
+.tp-hide-clutter [class*="stories-tower"],
+.tp-hide-clutter [data-a-target="stories-tower"] {
+    display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   First-Time Chatter Highlight
+   --------------------------------------------------------------------------- */
+
+.tp-first-chatter-highlight .chat-line__message[data-a-target="chat-message-first-time-chatter"],
+.tp-first-chatter-highlight .chat-line__message:has([data-a-target="chat-badge"]) {
+    /* Fallback: specific class applied via JS */
+}
+
+.twitch-plus-first-time-chatter {
+    background-color: rgba(255, 215, 0, 0.12) !important;
+    border-left: 3px solid #ffd700;
+    padding-left: 4px;
+}
+
+/* ---------------------------------------------------------------------------
+   Theater Mode Enhancements
+   --------------------------------------------------------------------------- */
+
+/* OLED black background */
+.tp-theater-oled .video-player,
+.tp-theater-oled .video-player__overlay,
+.tp-theater-oled [data-a-target="video-player"],
+.tp-theater-oled .theatre-chat-container,
+.tp-theater-oled .channel-root,
+.tp-theater-oled .channel-root__player-container {
+    background-color: #000000 !important;
+}
+
+.tp-theater-oled body,
+body.tp-theater-oled {
+    background-color: #000000 !important;
+}
+
+/* Transparent chat overlay in theater mode */
+.tp-theater-transparent .right-column,
+.tp-theater-transparent .channel-root__right-column {
+    position: absolute !important;
+    right: 0;
+    top: 0;
+    height: 100%;
+    z-index: 10;
+    background: rgba(14, 14, 16, 0.6) !important;
+    backdrop-filter: blur(4px);
+    -webkit-backdrop-filter: blur(4px);
+}
+
+.tp-theater-transparent .chat-shell,
+.tp-theater-transparent .stream-chat {
+    background: transparent !important;
+}
+
+.tp-theater-transparent .chat-input,
+.tp-theater-transparent .chat-input__buttons-container {
+    background: rgba(14, 14, 16, 0.8) !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Twitch Plus In-Chat Settings Button
+   --------------------------------------------------------------------------- */
+
+.tp-settings-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    color: #efeff1;
+    position: relative;
+    flex-shrink: 0;
+    transition: background-color 0.1s ease;
+}
+
+.tp-settings-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.tp-settings-btn:active {
+    background-color: rgba(255, 255, 255, 0.2);
+}
+
+.tp-settings-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: none;
+    overflow: visible;
+}
+
+.tp-settings-wrapper {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+}
+
+/* ---------------------------------------------------------------------------
+   Settings Panel — Full Slide-In Sidebar
+   —-------------------------------------------------------------------------- */
+
+/* Overlay backdrop */
+.tp-settings-backdrop {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9998;
+    background: rgba(0, 0, 0, 0.5);
+    backdrop-filter: blur(2px);
+    -webkit-backdrop-filter: blur(2px);
+    animation: tp-backdrop-fade 0.2s ease-out;
+}
+
+@keyframes tp-backdrop-fade {
+    from { opacity: 0; }
+    to { opacity: 1; }
+}
+
+/* Panel container — fixed sidebar from the right */
+.tp-settings-panel {
+    position: fixed;
+    top: 0;
+    right: 0;
+    width: 380px;
+    height: 100vh;
+    height: 100dvh;
+    background: #0e0e10;
+    border-left: 1px solid #2f2f35;
+    box-shadow: -8px 0 32px rgba(0, 0, 0, 0.5);
+    z-index: 9999;
+    font-family: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    display: flex;
+    flex-direction: column;
+    animation: tp-panel-slide 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@keyframes tp-panel-slide {
+    from {
+        transform: translateX(100%);
+    }
+    to {
+        transform: translateX(0);
+    }
+}
+
+/* Panel header with logo and close */
+.tp-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 16px 20px;
+    border-bottom: 1px solid #2f2f35;
+    flex-shrink: 0;
+    background: #18181b;
+}
+
+.tp-panel-logo {
+    width: 28px;
+    height: 28px;
+    border-radius: 6px;
+}
+
+.tp-panel-header h3 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #efeff1;
+    letter-spacing: 0.01em;
+    flex: 1;
+}
+
+.tp-panel-header .tp-panel-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 32px;
+    height: 32px;
+    padding: 0;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #adadb8;
+    cursor: pointer;
+    font-size: 18px;
+    line-height: 1;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tp-panel-header .tp-panel-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #efeff1;
+}
+
+/* Tab navigation bar */
+.tp-tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 2px;
+    padding: 8px 12px;
+    border-bottom: 1px solid #2f2f35;
+    flex-shrink: 0;
+    background: #18181b;
+}
+
+.tp-tab-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 6px;
+    background: transparent;
+    color: #adadb8;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    white-space: nowrap;
+    transition: background 0.15s, color 0.15s;
+    flex-shrink: 0;
+}
+
+.tp-tab-btn:hover {
+    background: rgba(255, 255, 255, 0.08);
+    color: #dedee3;
+}
+
+.tp-tab-btn.tp-tab-active {
+    background: rgba(145, 71, 255, 0.15);
+    color: #bf94ff;
+}
+
+.tp-tab-btn svg {
+    width: 14px;
+    height: 14px;
+    flex-shrink: 0;
+}
+
+/* Scrollable content area */
+.tp-settings-panel-content {
+    flex: 1;
+    overflow-y: auto;
+    padding: 12px 0 20px;
+}
+
+.tp-settings-panel-content::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tp-settings-panel-content::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tp-settings-panel-content::-webkit-scrollbar-thumb {
+    background: #3a3a3d;
+    border-radius: 3px;
+}
+
+.tp-settings-panel-content::-webkit-scrollbar-thumb:hover {
+    background: #53535f;
+}
+
+/* Tab content containers */
+.tp-tab-content {
+    display: none;
+}
+
+.tp-tab-content.tp-tab-visible {
+    display: block;
+}
+
+/* Section titles */
+.tp-section-title {
+    padding: 16px 20px 6px;
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.08em;
+    color: #7b7b8b;
+}
+
+.tp-section-title:first-child {
+    padding-top: 4px;
+}
+
+/* Setting card - groups related controls */
+.tp-setting-card {
+    margin: 4px 12px;
+    background: #18181b;
+    border: 1px solid #2f2f35;
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.tp-setting-card .tp-toggle-row:last-child {
+    margin-bottom: 0;
+}
+
+/* Toggle rows */
+.tp-toggle-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 10px 16px;
+    cursor: pointer;
+    transition: background-color 0.1s ease;
+    gap: 12px;
+}
+
+.tp-toggle-row:hover {
+    background-color: rgba(255, 255, 255, 0.04);
+}
+
+.tp-toggle-row + .tp-toggle-row {
+    border-top: 1px solid rgba(255, 255, 255, 0.04);
+}
+
+.tp-toggle-info {
+    flex: 1;
+    min-width: 0;
+}
+
+.tp-toggle-label {
+    font-size: 13px;
+    color: #efeff1;
+    user-select: none;
+    display: block;
+    font-weight: 500;
+}
+
+.tp-toggle-desc {
+    font-size: 11px;
+    color: #7b7b8b;
+    margin-top: 2px;
+    line-height: 1.3;
+}
+
+/* Toggle switch */
+.tp-toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
+}
+
+.tp-toggle-switch input {
+    opacity: 0;
+    width: 0;
+    height: 0;
+    position: absolute;
+}
+
+.tp-toggle-slider {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background-color: #3a3a3d;
+    border-radius: 10px;
+    cursor: pointer;
+    transition: background-color 0.2s ease;
+}
+
+.tp-toggle-slider::before {
+    content: "";
+    position: absolute;
+    height: 16px;
+    width: 16px;
+    left: 2px;
+    bottom: 2px;
+    background-color: #efeff1;
+    border-radius: 50%;
+    transition: transform 0.2s ease;
+}
+
+.tp-toggle-switch input:checked + .tp-toggle-slider {
+    background-color: #9147ff;
+}
+
+.tp-toggle-switch input:checked + .tp-toggle-slider::before {
+    transform: translateX(16px);
+}
+
+/* Disabled state when extension is off */
+.tp-toggle-row.tp-disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+.tp-setting-card.tp-disabled {
+    opacity: 0.35;
+    pointer-events: none;
+}
+
+/* Master toggle — special styling */
+.tp-master-toggle {
+    margin: 8px 12px;
+    background: #18181b;
+    border: 1px solid #2f2f35;
+    border-radius: 8px;
+}
+
+.tp-master-toggle .tp-toggle-row {
+    padding: 12px 16px;
+}
+
+.tp-master-toggle .tp-toggle-label {
+    font-size: 14px;
+    font-weight: 600;
+}
+
+/* ---------------------------------------------------------------------------
+   Select Dropdown & Number Input
+   --------------------------------------------------------------------------- */
+
+.tp-select {
+    appearance: none;
+    -webkit-appearance: none;
+    background: #2f2f35;
+    color: #efeff1;
+    border: 1px solid #3a3a3d;
+    border-radius: 6px;
+    padding: 6px 28px 6px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    cursor: pointer;
+    outline: none;
+    flex-shrink: 0;
+    max-width: 150px;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='10' height='6'%3E%3Cpath d='M0 0l5 6 5-6z' fill='%23adadb8'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 8px center;
+    transition: border-color 0.15s;
+}
+
+.tp-select:hover {
+    border-color: #53535f;
+}
+
+.tp-select:focus {
+    border-color: #9147ff;
+}
+
+.tp-number-input {
+    background: #2f2f35;
+    color: #efeff1;
+    border: 1px solid #3a3a3d;
+    border-radius: 6px;
+    padding: 6px 8px;
+    font-size: 12px;
+    font-family: inherit;
+    width: 64px;
+    outline: none;
+    flex-shrink: 0;
+    text-align: center;
+    transition: border-color 0.15s;
+}
+
+.tp-number-input:hover {
+    border-color: #53535f;
+}
+
+.tp-number-input:focus {
+    border-color: #9147ff;
+}
+
+/* ---------------------------------------------------------------------------
+   Keyword & Nickname Editor
+   --------------------------------------------------------------------------- */
+
+.tp-keyword-editor {
+    margin: 4px 12px 8px;
+    background: #18181b;
+    border: 1px solid #2f2f35;
+    border-radius: 8px;
+    padding: 12px 14px;
+}
+
+.tp-keyword-title {
+    font-size: 13px;
+    font-weight: 500;
+    color: #efeff1;
+    margin-bottom: 8px;
+}
+
+.tp-keyword-input-row {
+    display: flex;
+    gap: 6px;
+    margin-bottom: 8px;
+}
+
+.tp-keyword-input {
+    background: #2f2f35;
+    color: #efeff1;
+    border: 1px solid #3a3a3d;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 12px;
+    font-family: inherit;
+    outline: none;
+    flex: 1;
+    min-width: 0;
+    transition: border-color 0.15s;
+}
+
+.tp-keyword-input:focus {
+    border-color: #9147ff;
+}
+
+.tp-keyword-input::placeholder {
+    color: #53535f;
+}
+
+.tp-keyword-add-btn {
+    background: #9147ff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    width: 32px;
+    height: 32px;
+    font-size: 18px;
+    line-height: 1;
+    cursor: pointer;
+    flex-shrink: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.15s;
+}
+
+.tp-keyword-add-btn:hover {
+    background: #772ce8;
+}
+
+.tp-keyword-tags {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 6px;
+}
+
+.tp-keyword-tag {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    background: #2f2f35;
+    color: #dedee3;
+    border-radius: 4px;
+    padding: 4px 8px;
+    font-size: 12px;
+}
+
+.tp-keyword-tag-remove {
+    cursor: pointer;
+    color: #7b7b8b;
+    font-size: 14px;
+    line-height: 1;
+    transition: color 0.15s;
+}
+
+.tp-keyword-tag-remove:hover {
+    color: #ff4444;
+}
+
+/* Profile section buttons */
+.tp-profile-btn {
+    background: #9147ff;
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    padding: 8px 16px;
+    font-size: 13px;
+    font-weight: 600;
+    font-family: inherit;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.tp-profile-btn:hover {
+    background: #772ce8;
+}
+
+.tp-profile-btn-secondary {
+    background: #3a3a3d;
+}
+
+.tp-profile-btn-secondary:hover {
+    background: #53535f;
+}
+
+/* Panel footer */
+.tp-panel-footer {
+    padding: 10px 20px;
+    border-top: 1px solid #2f2f35;
+    flex-shrink: 0;
+    background: #18181b;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.tp-panel-footer span {
+    color: #53535f;
+    font-size: 11px;
+}
+
+/* ---------------------------------------------------------------------------
+   Keyword Highlight & Hidden Messages
+   --------------------------------------------------------------------------- */
+
+.twitch-plus-keyword-highlight {
+    background-color: rgba(255, 215, 0, 0.15) !important;
+    border-left: 3px solid #ffd700;
+    padding-left: 4px;
+}
+
+.twitch-plus-keyword-hidden {
+    display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Spoiler Tags
+   --------------------------------------------------------------------------- */
+
+.tp-spoiler {
+    background: #3a3a3d;
+    color: transparent;
+    border-radius: 3px;
+    padding: 0 4px;
+    cursor: pointer;
+    user-select: none;
+    transition: color 0.2s, background 0.2s;
+}
+
+.tp-spoiler.tp-spoiler-revealed {
+    background: rgba(58, 58, 61, 0.4);
+    color: inherit;
+    cursor: text;
+    user-select: auto;
+}
+
+/* ---------------------------------------------------------------------------
+   Emote Tab-Completion Dropdown
+   --------------------------------------------------------------------------- */
+
+.tp-completion-dropdown {
+    position: absolute;
+    bottom: 100%;
+    left: 0;
+    right: 0;
+    max-height: 240px;
+    overflow-y: auto;
+    background: #1f1f23;
+    border: 1px solid #3a3a3d;
+    border-radius: 6px 6px 0 0;
+    box-shadow: 0 -4px 12px rgba(0, 0, 0, 0.4);
+    z-index: 9997;
+    margin-bottom: 2px;
+}
+
+.tp-completion-item {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 10px;
+    cursor: pointer;
+    font-size: 13px;
+    color: #dedee3;
+    transition: background 0.1s;
+}
+
+.tp-completion-item:hover,
+.tp-completion-item.tp-completion-active {
+    background: rgba(145, 71, 255, 0.2);
+}
+
+.tp-completion-item img {
+    width: 24px;
+    height: 24px;
+    object-fit: contain;
+}
+
+.tp-completion-item-name {
+    flex: 1;
+}
+
+.tp-completion-item-source {
+    color: #6b6b7b;
+    font-size: 11px;
+}
+
+/* ---------------------------------------------------------------------------
+   Lurk Mode
+   --------------------------------------------------------------------------- */
+
+.tp-lurk-active .chat-input__textarea textarea,
+.tp-lurk-active .chat-input__textarea [contenteditable] {
+    opacity: 0.3;
+    pointer-events: none;
+}
+
+.tp-lurk-indicator {
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    background: rgba(14, 14, 16, 0.85);
+    color: #adadb8;
+    font-size: 12px;
+    padding: 4px 10px;
+    border-radius: 4px;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* ---------------------------------------------------------------------------
+   Mod Tool Buttons
+   --------------------------------------------------------------------------- */
+
+.tp-mod-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    background: transparent;
+    color: #adadb8;
+    border: 1px solid #3a3a3d;
+    border-radius: 3px;
+    padding: 1px 5px;
+    font-size: 10px;
+    cursor: pointer;
+    margin-left: 2px;
+    opacity: 0;
+    transition: opacity 0.15s;
+}
+
+.chat-line__message:hover .tp-mod-btn {
+    opacity: 1;
+}
+
+.tp-mod-btn:hover {
+    background: rgba(255, 68, 68, 0.2);
+    color: #ff4444;
+    border-color: #ff4444;
+}

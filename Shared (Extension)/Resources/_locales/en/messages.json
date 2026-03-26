@@ -1,10 +1,10 @@
 {
     "extension_name": {
-        "message": "Twitch Plus For Safari",
+        "message": "Twitch Plus",
         "description": "The display name for the extension."
     },
     "extension_description": {
-        "message": "This is Twitch Plus For Safari. You should tell us what your extension does here.",
+        "message": "Enhances Twitch with BTTV, FFZ, and 7TV emotes, chat improvements, and more.",
         "description": "Description of what the extension does."
     }
 }

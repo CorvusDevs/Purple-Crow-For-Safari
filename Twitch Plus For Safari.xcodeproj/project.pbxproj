@@ -58,6 +58,8 @@
 		718D78ED2F73E7CF00CBF422 /* Twitch Plus For Safari.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = "Twitch Plus For Safari.app"; sourceTree = BUILT_PRODUCTS_DIR; };
 		718D78F82F73E7CF00CBF422 /* Twitch Plus For Safari Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Twitch Plus For Safari Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
 		718D79022F73E7CF00CBF422 /* Twitch Plus For Safari Extension.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = "Twitch Plus For Safari Extension.appex"; sourceTree = BUILT_PRODUCTS_DIR; };
+		718D793D2F73E8C900CBF422 /* safari-extension-reference.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = "safari-extension-reference.md"; sourceTree = "<group>"; };
+		718D793E2F73E8CA00CBF422 /* CLAUDE.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = CLAUDE.md; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFileSystemSynchronizedBuildFileExceptionSet section */
@@ -111,8 +113,10 @@
 			membershipExceptions = (
 				Resources/_locales,
 				Resources/background.js,
+				"Resources/content-styles.css",
 				Resources/content.js,
 				Resources/images,
+				Resources/injected.js,
 				Resources/manifest.json,
 				Resources/popup.css,
 				Resources/popup.html,
@@ -126,8 +130,10 @@
 			membershipExceptions = (
 				Resources/_locales,
 				Resources/background.js,
+				"Resources/content-styles.css",
 				Resources/content.js,
 				Resources/images,
+				Resources/injected.js,
 				Resources/manifest.json,
 				Resources/popup.css,
 				Resources/popup.html,
@@ -234,6 +240,8 @@
 				718D78FC2F73E7CF00CBF422 /* iOS (Extension) */,
 				718D79062F73E7CF00CBF422 /* macOS (Extension) */,
 				718D78DC2F73E7CF00CBF422 /* Products */,
+				718D793D2F73E8C900CBF422 /* safari-extension-reference.md */,
+				718D793E2F73E8CA00CBF422 /* CLAUDE.md */,
 			);
 			sourceTree = "<group>";
 		};
@@ -481,7 +489,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -515,7 +523,7 @@
 					"@executable_path/Frameworks",
 					"@executable_path/../../Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -555,7 +563,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -596,7 +604,7 @@
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -636,7 +644,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -672,7 +680,7 @@
 					"@executable_path/../../../../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -710,7 +718,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,
@@ -751,7 +759,7 @@
 					"@executable_path/../Frameworks",
 				);
 				MACOSX_DEPLOYMENT_TARGET = 10.14;
-				MARKETING_VERSION = 1.0;
+				MARKETING_VERSION = 2.0.0;
 				OTHER_LDFLAGS = (
 					"-framework",
 					SafariServices,

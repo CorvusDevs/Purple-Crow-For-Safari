@@ -1,5 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<svg version="1.1" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 15.9375 15.9453">
-  <path d="M7.96875 15.9375C12.3281 15.9375 15.9375 12.3203 15.9375 7.96875C15.9375 3.60938 12.3203 0 7.96094 0C3.60938 0 0 3.60938 0 7.96875C0 12.3203 3.61719 15.9375 7.96875 15.9375ZM7.96875 14.6094C4.28125 14.6094 1.33594 11.6562 1.33594 7.96875C1.33594 4.28125 4.27344 1.32812 7.96094 1.32812C11.6484 1.32812 14.6094 4.28125 14.6094 7.96875C14.6094 11.6562 11.6562 14.6094 7.96875 14.6094Z" />
-  <path d="M4.53906 8.50781C4.53906 8.70312 4.69531 8.84375 4.89844 8.84375L7.54688 8.84375L6.13281 12.6406C5.94531 13.1406 6.47656 13.4141 6.80469 13.0078L11.0859 7.63281C11.1719 7.53906 11.2188 7.42969 11.2188 7.32812C11.2188 7.13281 11.0625 6.99219 10.8594 6.99219L8.21094 6.99219L9.625 3.19531C9.8125 2.69531 9.28125 2.42188 8.95312 2.82031L4.67188 8.19531C4.58594 8.29688 4.53906 8.40625 4.53906 8.50781Z" />
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
+  <!-- Simplified crow silhouette for toolbar -->
+  <!-- Tail -->
+  <path d="M2.2 10.5Q1.5 11.2 1.5 12.5Q2 12 2.5 11.8Q2.2 12.8 2.3 13.5Q2.8 12.8 3.2 12.3L4 10.8Z" fill="context-fill" opacity="0.85"/>
+  <!-- Body -->
+  <ellipse cx="7" cy="9" rx="4.2" ry="3" fill="context-fill"/>
+  <!-- Wing detail -->
+  <path d="M5.2 8Q4.3 7 4.1 8.5Q4 9.5 4.8 10.5Q5.6 11.2 7 11Q6.1 10.5 5.6 9.7Q5.3 9 5.2 8Z" fill="context-fill" opacity="0.7"/>
+  <!-- Head -->
+  <circle cx="10.2" cy="5.8" r="2.5" fill="context-fill"/>
+  <!-- Eye -->
+  <circle cx="11" cy="5.5" r="0.9" fill="context-stroke"/>
+  <circle cx="11.2" cy="5.3" r="0.35" fill="context-fill"/>
+  <!-- Beak -->
+  <path d="M12.5 5.8L14.2 6L12.7 6.7Z" fill="context-fill" opacity="0.85"/>
+  <!-- Crest -->
+  <path d="M9 4.2Q8.8 3 9.5 2.3" fill="none" stroke="context-fill" stroke-width="0.6" stroke-linecap="round"/>
+  <path d="M9.7 3.9Q9.8 2.6 10.6 2" fill="none" stroke="context-fill" stroke-width="0.6" stroke-linecap="round"/>
+  <path d="M10.3 3.8Q10.8 2.7 11.5 2.3" fill="none" stroke="context-fill" stroke-width="0.55" stroke-linecap="round"/>
+  <!-- Feet -->
+  <path d="M6 11.8L5.7 13L5.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M5.7 13L6.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round"/>
+  <path d="M8 11.8L7.7 13L7.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M7.7 13L8.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round"/>
 </svg>
