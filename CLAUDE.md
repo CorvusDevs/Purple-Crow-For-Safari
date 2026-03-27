@@ -15,6 +15,8 @@ Safari Web Extension for macOS/iOS. The extension code lives in `Shared (Extensi
 
 - **Localize every user-facing string.** Use `_locales/` message files for extension UI and `String(localized:)` for any Swift code. Never use bare string literals in user-facing contexts.
 
+- **All text-matching fixes must be multi-language.** When modifying, replacing, or removing text strings from third-party UI (e.g. Twitch's native buttons, labels, or menus), never match against a single language. The user's browser locale may be any language. Use locale-agnostic patterns (regex with character classes for accented variants like `versi[oó]n`, semantic selectors, or DOM structure) instead of hardcoded English strings.
+
 ## Screenshots & Image Attachments
 
 - **macOS screenshot filenames contain Unicode non-breaking spaces** (narrow no-break space `U+202F` and no-break space `U+00A0`) that cause the `Read` tool to fail with "File does not exist". Never attempt to read the path directly. Instead, always use this pattern:
@@ -45,6 +47,8 @@ Safari Web Extension for macOS/iOS. The extension code lives in `Shared (Extensi
 - **Add debug logging when a problem persists.** When a bug is reported and the root cause isn't immediately clear, add targeted `console.log()` / `console.error()` calls to the relevant code path before attempting a fix.
 
 - **Keep debug logging during active development.** Do not proactively remove debug tools or logging after fixing a bug. Only remove them in two cases: (1) the user says the project is finishing up and you suggest cleanup, or (2) the code being debugged was removed, fundamentally changed, or became dead code — making the logging obsolete.
+
+- **CRITICAL: Never remove debug, profiling, or logging features without explicit user approval.** Debug infrastructure (profiling tools, performance reporters, console.log/warn/error statements, debug flags) must never be deleted or disabled without first asking the user for confirmation. These tools are essential for diagnosing future issues. You may propose cleanup, but must wait for approval before acting.
 
 ## Commits
 

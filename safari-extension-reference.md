@@ -23,6 +23,11 @@ A practical reference for building Safari Web Extensions on macOS/iOS, based on 
 15. [Xcode Integration](#xcode-integration)
 16. [Common Pitfalls](#common-pitfalls)
 17. [Locale-Agnostic DOM Selectors](#locale-agnostic-dom-selectors)
+18. [In-Page Settings Panel](#in-page-settings-panel)
+19. [Safari WebKit Limitations](#safari-webkit-limitations)
+20. [MutationObserver for Lazy-Rendered UI](#mutationobserver-for-lazy-rendered-ui)
+21. [Multi-Language Text Matching](#multi-language-text-matching)
+22. [Popup as Settings Panel Opener](#popup-as-settings-panel-opener)
 
 ---
 
@@ -957,13 +962,13 @@ document.querySelector('button[aria-label*="alt+t"]');
 
 Use this priority when targeting host-page elements:
 
-1. **`data-*` attributes** — `data-a-target`, `data-test-selector`, `data-testid`. These are set by developers for testing and are language-independent. However, sites may remove them over time (Twitch has been dropping `data-a-target` attributes).
+1. **`data-*` attributes** — `data-a-target`, `data-test-selector`, `data-testid`. These are set by developers for testing and are language-independent. However, sites may remove them over time.
 
 2. **`aria-label` with language-neutral substrings** — Keyboard shortcut hints like `"alt+t"`, `"ctrl+m"`, icon names, or emoji are often consistent across translations. Use `*=` (contains) matching, not `=` (exact).
 
 3. **Structural CSS selectors** — `.parent > :nth-child(n) button`, `.container button:last-of-type`. These don't depend on text content but are fragile if the DOM structure changes.
 
-4. **Class names** — Stable BEM-style classes (`.chat-line__message`, `.video-player`) are safe. Avoid Styled Components hashes (`sc-abc123-4`) that change every deploy.
+4. **Class names** — Stable BEM-style classes are safe. Avoid Styled Components hashes (`sc-abc123-4`) or obfuscated classes that change every deploy.
 
 5. **Text content / full `aria-label` strings** — **Last resort only.** These break for every non-English user.
 
@@ -978,18 +983,6 @@ const btn = document.querySelector('button[aria-label*="alt+t"]')        // loca
     || document.querySelector('button[aria-label*="Theater Mode"]');          // US English variant
 ```
 
-### Real-world example (Twitch)
-
-The theater mode button's `aria-label` varies by locale:
-| Language | `aria-label` value |
-|---|---|
-| English | `Theatre Mode (alt+t)` |
-| Spanish | `Modo cine (alt+t)` |
-| German | `Theatermodus (Alt+T)` |
-| Japanese | `シアターモード (alt+t)` |
-
-The `data-a-target="player-theatre-mode-button"` attribute that used to exist was removed by Twitch. The only reliable, locale-agnostic selector is `button[aria-label*="alt+t"]`.
-
 ### Debugging locale issues
 
 When a DOM interaction doesn't work, dump all candidate elements and their attributes:
@@ -1000,6 +993,350 @@ document.querySelectorAll('.player-controls button').forEach(btn => {
 });
 ```
 This immediately reveals whether your selector is matching the wrong attribute value due to localization.
+
+---
+
+## In-Page Settings Panel
+
+For extensions with many settings, an in-page settings panel (injected into the target site) is more convenient than a popup. A sidebar navigation layout scales well as features grow.
+
+### Recommended layout
+
+```
+┌─────────────────────────────────────────┐
+│  Logo  Title              [ON/OFF]  ✕   │  ← Fixed header with master toggle
+├──────────┬──────────────────────────────┤
+│ Category │  SECTION TITLE               │
+│ Category │  ┌───────────────────────┐   │
+│ Category │  │ Toggle / select row   │   │  ← Scrollable content area
+│ Category │  │ Toggle / select row   │   │
+│ ...      │  └───────────────────────┘   │
+├──────────┴──────────────────────────────┤
+│            Extension v1.0.0             │  ← Fixed footer
+└─────────────────────────────────────────┘
+```
+
+**Why sidebar navigation over tabs:** Horizontal tab bars overflow when you have more than 4–5 categories. A vertical sidebar (icon + label, ~90px wide) scales to many categories without wrapping or scrollbar hacks.
+
+### DOM structure
+
+```js
+function createSettingsPanel() {
+    const panel = document.createElement("div");
+    panel.className = "my-ext-settings-panel";
+
+    // ── Header (logo + title + master toggle + close) ──
+    const header = document.createElement("div");
+    header.className = "my-ext-panel-header";
+    // ... logo, title h3, master toggle switch, close button
+    panel.appendChild(header);
+
+    // ── Sidebar layout (nav + content) ──
+    const layout = document.createElement("div");
+    layout.className = "my-ext-sidebar-layout"; // display: flex
+
+    // Left sidebar with category buttons
+    const sidebar = document.createElement("div");
+    sidebar.className = "my-ext-sidebar"; // flex-direction: column, ~90px
+
+    const categories = [
+        { id: "general", label: "General", icon: "..." },
+        { id: "chat", label: "Chat", icon: "..." },
+        // ...
+    ];
+
+    const categoryContents = {};
+    let activeId = categories[0].id;
+
+    function switchCategory(id) {
+        sidebar.querySelectorAll(".my-ext-sidebar-btn").forEach(btn =>
+            btn.classList.toggle("active", btn.dataset.category === id));
+        Object.entries(categoryContents).forEach(([cid, el]) =>
+            el.classList.toggle("visible", cid === id));
+    }
+
+    categories.forEach(cat => {
+        const btn = document.createElement("button");
+        btn.className = "my-ext-sidebar-btn";
+        btn.dataset.category = cat.id;
+        btn.innerHTML = cat.icon + `<span>${cat.label}</span>`;
+        btn.addEventListener("click", () => switchCategory(cat.id));
+        sidebar.appendChild(btn);
+    });
+    layout.appendChild(sidebar);
+
+    // Right scrollable content
+    const content = document.createElement("div");
+    content.className = "my-ext-sidebar-content"; // flex: 1, overflow-y: auto
+
+    // Build category content containers (only one visible at a time)
+    // ... append toggle rows, select rows, section titles
+    layout.appendChild(content);
+    panel.appendChild(layout);
+
+    // ── Footer ──
+    const footer = document.createElement("div");
+    footer.className = "my-ext-panel-footer";
+    panel.appendChild(footer);
+
+    return panel;
+}
+```
+
+### CSS skeleton
+
+```css
+/* Panel — fixed sidebar from right edge */
+.my-ext-settings-panel {
+    position: fixed;
+    top: 0; right: 0;
+    width: 380px;
+    height: 100vh; height: 100dvh; /* Safari viewport fix */
+    display: flex;
+    flex-direction: column;
+    z-index: 9999;
+    animation: slide-in 0.25s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* Header — always visible, contains master toggle */
+.my-ext-panel-header {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    padding: 12px 16px;
+    flex-shrink: 0;
+}
+
+/* Two-column body */
+.my-ext-sidebar-layout {
+    display: flex;
+    flex: 1;
+    min-height: 0; /* critical for overflow to work */
+}
+
+/* Left sidebar nav */
+.my-ext-sidebar {
+    width: 88px;
+    flex-shrink: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 6px;
+    overflow-y: auto;
+}
+
+/* Sidebar buttons — icon stacked above label */
+.my-ext-sidebar-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 3px;
+    padding: 8px 4px;
+    border: none;
+    border-radius: 8px;
+    font-size: 10px;
+    cursor: pointer;
+}
+
+/* Right scrollable content */
+.my-ext-sidebar-content {
+    flex: 1;
+    overflow-y: auto;
+    min-width: 0;
+}
+
+/* Category containers — show/hide */
+.my-ext-category { display: none; }
+.my-ext-category.visible { display: block; }
+```
+
+### Key principles
+
+- **Master toggle in the header.** The extension on/off switch must always be visible and not scroll with content. Place it in the header row.
+- **Use `100dvh` for panel height.** Safari's `100vh` can extend behind the dynamic toolbar on iOS. The `100dvh` fallback-after-`100vh` pattern handles this.
+- **`min-height: 0` on the flex container.** Without this, the sidebar layout won't allow the content area to scroll properly.
+- **Backdrop + click-outside to close.** Add a semi-transparent backdrop behind the panel. Clicking it or pressing Escape closes the panel. For HTML `<dialog>` elements using `.showModal()`, listen for clicks where `e.target === dialog` (the backdrop area) and call `dialog.close()`. Apply this to all dialogs at init time with a single loop:
+  ```js
+  document.querySelectorAll("dialog").forEach(dialog => {
+      dialog.addEventListener("click", (e) => {
+          if (e.target === dialog) dialog.close();
+      });
+  });
+  ```
+  Requires `padding: 0` on the `<dialog>` element so clicks on the visible panel hit child elements, not the dialog itself.
+- **Backdrop blur for depth.** Use `backdrop-filter: blur()` on the dialog backdrop to create visual depth separation between the panel and the page content behind it. The `-webkit-` prefix is required for Safari:
+  ```css
+  dialog::backdrop {
+      background: rgba(0, 0, 0, 0.4);
+      backdrop-filter: blur(2px);
+      -webkit-backdrop-filter: blur(2px);
+  }
+  ```
+  Keep the blur subtle (2–4px) — heavier values (8px+) cause visible lag on lower-end hardware and distract from the panel content.
+- **Merge sparse categories.** If a category has only 1–2 items, merge it into a "More" category with section headers to keep the sidebar concise.
+- **Disable state propagation.** When the master toggle is off, grey out (opacity + pointer-events: none) all sidebar buttons and content controls.
+- **Re-create the panel on open.** Don't cache the panel DOM. Recreate it each time from current settings state to avoid stale toggles after background changes.
+- **Stop click propagation.** Call `e.stopPropagation()` on the panel to prevent clicks inside it from triggering the backdrop close handler or the host site's event listeners.
+
+---
+
+## RSS / Feed Content Rendering in a Reading Pane
+
+Rendering arbitrary HTML from RSS feeds inside a constrained reading pane is surprisingly tricky. Feed content is authored for full-width websites and often contains layout structures that break in narrow containers.
+
+### Message Size Limits
+
+- **`browser.runtime.sendMessage()` has a silent size limit in Safari** (~4–8 MB). If you store full article HTML content and send hundreds of articles in a single message, it will fail silently — the promise never resolves and no error is thrown.
+- **Fix: lightweight article projections.** Strip the `content` field when sending article lists. Send only metadata (title, date, summary, thumbnailUrl). Lazy-load full content on demand via a separate `getArticleContent` message when the user selects an article.
+- **Pre-extract thumbnail URLs** at article creation time so list views never need the full content blob.
+
+### HTML Sanitization for Feed Content
+
+- **Strip fixed `width`/`height` attributes** from all elements except `<img>` (images need them for aspect ratio). RSS feeds frequently include `<table width="800">` or `<div width="1000">` that overflow narrow containers.
+- **Clamp inline `style` widths** — remove `min-width`, convert fixed-pixel `width` values to `width: 100%`. Leave percentage widths and `auto` alone.
+- **Duplicate thumbnails**: When you extract a thumbnail from `<img>` in the content and display it as a standalone element above the body, remove the first matching `<img>` from the content DOM to avoid showing it twice.
+
+### Layout Tables in RSS Feeds
+
+- **RSS feeds use `<table>` for page layout**, not just data. Reddit, newsletters, and many CMS platforms wrap article content in `<table><tr><td>text</td><td>sidebar</td></tr></table>`. This creates multi-column layouts that break in narrow reading panes.
+- **CSS-only fix**: Force all table elements inside article content to `display: block; width: 100% !important`. This linearises any table — layout or data — into a single stacked column:
+  ```css
+  .article-body table, .article-body thead, .article-body tbody,
+  .article-body tfoot, .article-body tr, .article-body th, .article-body td {
+      display: block;
+      width: 100% !important;
+      box-sizing: border-box;
+  }
+  ```
+- This is more reliable than JS-based heuristics for detecting "layout tables" vs "data tables".
+
+### CSS Multi-Column (`column-count`) Pitfalls
+
+- **Never apply `column-count` to articles with complex content.** CSS multi-column fragments images, tables, code blocks, lists, and headings across columns, creating broken layouts.
+- **Guard with a content check**: Before applying newspaper-style columns, scan for `table, pre, code, img, ul, ol, iframe, video, figure, blockquote, h1, h2, h3`. If any exist, skip multi-column entirely.
+- Multi-column layout only works well for long-form **pure text** articles (just paragraphs and links).
+
+### Grid Children and Overflow
+
+- **CSS Grid children default to `min-height: auto`**, which prevents them from shrinking below their content size. A scrollable article list inside a grid cell won't scroll unless the grid child has `min-height: 0` or `overflow: hidden`.
+- Both `min-height: 0` and `overflow: hidden` solve this. Use `overflow: hidden` when you also want to clip overflowing content.
+
+---
+
+## Safari WebKit Limitations
+
+### `createMediaElementSource()` does not work with HLS/MSE streams
+
+Safari uses native HLS playback for `<video>` elements on sites like Twitch. The Web Audio API's `createMediaElementSource()` **does not route audio** from HLS (or MSE) streams through the audio graph. This is a confirmed WebKit bug (#231656 / #180696).
+
+**Symptoms**: You connect a `MediaElementSourceNode` to a chain of audio processing nodes (compressor, gain, etc.) and attach an `AnalyserNode`. The analyser reports all zeros — no audio is flowing through the graph, even though the video plays with sound via its native output.
+
+**Workarounds that don't exist**:
+- `captureStream()` — not implemented in Safari.
+- Intercepting MSE SourceBuffers — Safari uses native HLS, not MSE, so there are no SourceBuffers to tap.
+- WebCodecs — limited Safari support, no viable path.
+
+**Conclusion**: Real-time audio processing (compression, EQ, normalization) is not possible for HLS video in Safari. If you need this feature, it cannot be implemented as a Safari extension. Remove the feature or use a volume-based approximation (e.g., `video.volume = 0.65`) with a clear disclaimer.
+
+---
+
+## MutationObserver for Lazy-Rendered UI
+
+### The problem: dropdowns, popovers, and modals render on demand
+
+Many web apps (Twitch, YouTube, etc.) only render dropdown/popover/modal content into the DOM when the user interacts (clicks a button, hovers). If your extension needs to modify text or elements inside these containers, **`setTimeout` will miss them** because the DOM nodes don't exist yet at any fixed delay.
+
+### The solution: MutationObserver on `document.body`
+
+```js
+let observer = null;
+
+function startObserver() {
+    if (observer) return;
+    observer = new MutationObserver(() => {
+        modifyTargetElements();  // Your DOM modification function
+    });
+    observer.observe(document.body, { childList: true, subtree: true });
+    modifyTargetElements();  // Run once immediately for any existing content
+}
+
+function stopObserver() {
+    if (observer) { observer.disconnect(); observer = null; }
+}
+```
+
+### When to use this pattern
+- Modifying text in dropdown menus (e.g., shortening download labels)
+- Injecting elements into popover cards (e.g., enhanced user cards)
+- Watching for modals or dialogs that appear on user action
+- Any case where the target DOM doesn't exist at page load or at a predictable time
+
+### Performance note
+A `MutationObserver` on `document.body` with `subtree: true` fires frequently. Keep the callback lightweight — use early-exit checks (e.g., `if (!regex.test(el.textContent)) continue`) and avoid heavy DOM queries. Scope the observer to the most specific container when possible.
+
+---
+
+## Multi-Language Text Matching
+
+### Never hardcode English strings when modifying third-party UI
+
+When your extension modifies text in a host page (e.g., shortening labels, hiding elements by text content), the text will be in the user's language, not English.
+
+### Use language-spanning regex patterns
+
+```js
+// BAD: only matches English
+node.nodeValue.replace(/Version/gi, "");
+
+// GOOD: matches English "Version" and Spanish "versión"
+node.nodeValue.replace(/\s*versi[oó]n\s*/gi, " ").trim();
+```
+
+### Strategy for unknown languages
+1. **Identify the invariant part** — find the substring that's common across all translations (e.g., a number, a symbol, or a root word).
+2. **Use character class ranges** for accented variants: `[oó]`, `[eé]`, `[aáà]`, etc.
+3. **Test with at least 2 non-English locales** before shipping.
+4. **If no invariant substring exists**, use structural selectors (nth-child, data attributes) instead of text matching.
+
+This pattern applies to **all text replacement operations**, not just DOM modifications. It includes `aria-label` matching, button text detection, and any string comparison against host page content.
+
+---
+
+## Popup as Settings Panel Opener
+
+### The problem: in-page settings buttons can't be injected everywhere
+
+In-page settings buttons (e.g., next to chat input) only work on pages that have the expected DOM structure. On clip pages, VOD pages, directory pages, or other non-channel views, there may be no chat area to anchor the button to. Injecting into the top nav is fragile and breaks across Twitch UI updates.
+
+### The solution: use the extension popup to open the in-page panel
+
+Instead of a full settings UI in the popup, make the popup a lightweight launcher that sends a message to the content script to open the in-page settings panel:
+
+```js
+// popup.js — on DOMContentLoaded, send a message to open the panel
+browser.tabs.query({ active: true, currentWindow: true }).then((tabs) => {
+    if (tabs[0]) {
+        browser.tabs.sendMessage(tabs[0].id, { action: "openSettingsPanel" });
+    }
+});
+// Close the popup immediately
+window.close();
+```
+
+```js
+// content.js — handle the message
+browser.runtime.onMessage.addListener((request) => {
+    if (request.action === "openSettingsPanel") {
+        openSettingsPanel();
+    }
+});
+```
+
+**Benefits**:
+- Works on every page the content script runs on (no DOM anchor needed)
+- Single source of truth for settings UI (the in-page panel)
+- No need to maintain a separate popup UI with duplicate toggle logic
+- The popup is just a bridge — zero UI to keep in sync
 
 ---
 
@@ -1023,3 +1360,9 @@ This immediately reveals whether your selector is matching the wrong attribute v
 - [ ] Apply settings live via `applySettingChange()` — never require a page reload
 - [ ] Use locale-agnostic selectors (match `data-*` attrs or keyboard shortcut hints, not English text)
 - [ ] Test DOM interactions with a non-English system language
+- [ ] Use sidebar navigation (not tab bars) for in-page settings panels with 5+ categories
+- [ ] Use MutationObserver (not setTimeout) to modify dynamically-rendered dropdowns/popovers
+- [ ] Use language-spanning regex (e.g., `versi[oó]n`) for all text matching in host pages
+- [ ] Don't attempt `createMediaElementSource()` on HLS/MSE video — it won't route audio in Safari
+- [ ] Consider making the popup a bridge to the in-page settings panel for universal access
+- [ ] Check established implementations of similar extensions before building features they already solve — avoid trial-and-error when proven approaches exist

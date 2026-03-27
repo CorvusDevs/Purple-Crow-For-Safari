@@ -23,8 +23,10 @@ const DEFAULT_SETTINGS = {
     chatTimestamps: false,
     showDeletedMessages: true,
     mentionHighlights: true,
-    splitChat: false,
-    alternatingUsers: false,
+    splitChat: true,
+    splitChatTheme: "default",
+    splitChatCustomColors: ["rgba(24, 24, 28, 0.6)", "rgba(50, 50, 56, 0.5)"],
+    alternatingUsers: true,
     firstTimeChatterHighlight: true,
     spoilerHiding: true,
     chatFontFamily: "",
@@ -36,24 +38,44 @@ const DEFAULT_SETTINGS = {
     emoteTabCompletion: true,
     lurkMode: false,
     // Player
-    audioCompressor: false,
     autoTheaterMode: false,
     theaterOledBlack: false,
     theaterTransparentChat: false,
     autoQuality: "",
     disableAutoplay: false,
     // Automation
-    autoClaimPoints: false,
-    autoClaimDrops: false,
+    autoClaimPoints: true,
+    autoClaimDrops: true,
     autoClaimMoments: false,
     // Moderation
     modToolsEnabled: false,
     customTimeouts: [60, 600, 3600],
     // UI
     hideClutter: false,
-    // Profiles
-    channelProfiles: {},
     readableColors: false,
+    // New features (v3.0.0)
+    emoteMenuEnabled: true,
+    animatedEmotes: true,
+    showPronouns: false,
+    enhancedUserCards: true,
+    chatSearch: false,
+    spamFilter: false,
+    spamThreshold: 3,
+    spamWindow: 10,
+    hideBots: false,
+    youtubePreview: true,
+    pipButton: true,
+    // New features (v3.1.0)
+    clipDownload: true,
+    chatImagePreview: true,
+    watchTimeTracker: false,
+    unwantedFilter: [],
+    chatOnLeft: false,
+    vodRealTimeClock: true,
+    screenshotButton: true,
+    slowModeCountdown: true,
+    channelPreviews: true,
+    autoExpandFollowed: true,
 };
 
 let settings = { ...DEFAULT_SETTINGS };
@@ -74,6 +96,23 @@ async function loadSettings() {
         const result = await browser.storage.local.get("settings");
         if (result.settings) {
             settings = { ...DEFAULT_SETTINGS, ...result.settings };
+
+            // Migration: v3.1.1+ changed several defaults from false to true.
+            // Users who had them stored as false from an earlier version need them reset.
+            if (!settings._settingsVersion || settings._settingsVersion < 3) {
+                const keysToResetTrue = [
+                    "autoClaimPoints", "autoClaimDrops",
+                    "splitChat", "alternatingUsers", "screenshotButton",
+                ];
+                for (const key of keysToResetTrue) {
+                    if (result.settings[key] === false) {
+                        settings[key] = true;
+                        console.log(`[Twitch Plus] Migration: reset ${key} to true (was stored as false from old default).`);
+                    }
+                }
+                settings._settingsVersion = 3;
+                await browser.storage.local.set({ settings });
+            }
         }
     } catch (e) {
         console.error("[Twitch Plus] Failed to load settings:", e);
@@ -81,8 +120,21 @@ async function loadSettings() {
 }
 
 async function saveSettings(newSettings) {
-    settings = { ...DEFAULT_SETTINGS, ...newSettings };
+    settings = { ...settings, ...newSettings };
     await browser.storage.local.set({ settings });
+    // Broadcast updated settings to all Twitch tabs
+    broadcastSettings();
+}
+
+function broadcastSettings() {
+    browser.tabs.query({ url: "*://*.twitch.tv/*" }).then((tabs) => {
+        for (const tab of tabs) {
+            browser.tabs.sendMessage(tab.id, {
+                action: "settingsUpdated",
+                settings,
+            }).catch(() => {});
+        }
+    }).catch(() => {});
 }
 
 // ---------------------------------------------------------------------------
@@ -330,6 +382,15 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         });
     }
 
+    if (request.action === "saveSetting") {
+        const { key, value } = request;
+        if (key) {
+            settings[key] = value;
+            return saveSettings({ [key]: value }).then(() => ({ success: true }));
+        }
+        return Promise.resolve({ success: false });
+    }
+
     if (request.action === "getEmotes") {
         const channelId = request.channelId;
         return (async () => {
@@ -365,37 +426,185 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
         return fetchSevenTvCosmetics(request.twitchUserId);
     }
 
-    // --- Channel Profiles ---
-    if (request.action === "getChannelProfile") {
-        const channel = request.channel;
-        const profile = settings.channelProfiles?.[channel] || null;
-        if (profile) {
-            const merged = { ...settings, ...profile };
-            return Promise.resolve({ settings: merged });
-        }
-        return Promise.resolve({ settings });
+
+
+    // --- Pronouns ---
+    if (request.action === "getPronouns") {
+        return fetchPronouns(request.login);
     }
 
-    if (request.action === "saveChannelProfile") {
-        const { channel, profileSettings } = request;
-        if (!settings.channelProfiles) settings.channelProfiles = {};
-        settings.channelProfiles[channel] = profileSettings;
-        return saveSettings({ channelProfiles: settings.channelProfiles }).then(() => {
-            return { ok: true };
+    // --- Known Bots ---
+    if (request.action === "getKnownBots") {
+        return fetchKnownBots().then((bots) => {
+            return { bots: Array.from(bots) };
         });
     }
 
-    if (request.action === "deleteChannelProfile") {
-        const { channel } = request;
-        if (settings.channelProfiles?.[channel]) {
-            delete settings.channelProfiles[channel];
-            return saveSettings({ channelProfiles: settings.channelProfiles }).then(() => {
-                return { ok: true };
-            });
-        }
-        return Promise.resolve({ ok: true });
+    // --- YouTube Preview ---
+    if (request.action === "getYoutubePreview") {
+        return fetchYoutubePreview(request.url);
+    }
+
+    // --- Open Settings Panel (relayed from popup) ---
+    if (request.action === "openSettingsPanel") {
+        console.log("[Twitch Plus] Background received openSettingsPanel request");
+
+        return (async () => {
+            // Find the active Twitch tab — prefer the one that triggered the popup
+            let tabs = await browser.tabs.query({ active: true, currentWindow: true });
+            let twitchTab = tabs.find(t => t.url && t.url.includes("twitch.tv"));
+
+            // Fallback: any active Twitch tab across all windows
+            if (!twitchTab) {
+                tabs = await browser.tabs.query({ url: "*://*.twitch.tv/*" });
+                twitchTab = tabs[0];
+            }
+
+            if (!twitchTab) {
+                console.warn("[Twitch Plus] No Twitch tab found for openSettingsPanel");
+                return { opened: false, error: "Navigate to twitch.tv first." };
+            }
+
+            console.log("[Twitch Plus] Sending openSettingsPanel to tab:", twitchTab.id, twitchTab.url);
+            try {
+                const resp = await browser.tabs.sendMessage(twitchTab.id, { action: "openSettingsPanel" });
+                console.log("[Twitch Plus] Content script responded:", resp);
+                return { opened: true };
+            } catch (e) {
+                console.warn("[Twitch Plus] Could not relay openSettingsPanel:", e);
+                return { opened: false, error: "Could not reach the Twitch page. Try refreshing it." };
+            }
+        })();
     }
 });
+
+// ---------------------------------------------------------------------------
+// Pronouns (alejo.io)
+// ---------------------------------------------------------------------------
+
+const pronounsCache = new Map();
+const PRONOUNS_TTL = 30 * 60 * 1000; // 30 minutes
+let pronounMap = null; // id -> display string
+let pronounMapFetching = false;
+
+async function fetchPronounMap() {
+    if (pronounMap) return pronounMap;
+    if (pronounMapFetching) {
+        return new Promise((resolve) => {
+            const check = setInterval(() => {
+                if (pronounMap) { clearInterval(check); resolve(pronounMap); }
+            }, 200);
+        });
+    }
+    pronounMapFetching = true;
+    const data = await safeFetch("https://api.pronouns.alejo.io/v1/pronouns");
+    pronounMap = {};
+    if (Array.isArray(data)) {
+        for (const p of data) {
+            pronounMap[p.name] = p.display;
+        }
+    }
+    pronounMapFetching = false;
+    return pronounMap;
+}
+
+async function fetchPronouns(login) {
+    if (!login) return { pronouns: null };
+
+    const cached = pronounsCache.get(login);
+    if (cached && Date.now() - cached.timestamp < PRONOUNS_TTL) {
+        return { pronouns: cached.data };
+    }
+
+    try {
+        const map = await fetchPronounMap();
+        const data = await safeFetch(`https://api.pronouns.alejo.io/v1/users/${login}`);
+        if (!data || !Array.isArray(data) || data.length === 0) {
+            pronounsCache.set(login, { data: null, timestamp: Date.now() });
+            return { pronouns: null };
+        }
+        const entry = data[0];
+        const display = map[entry.pronoun_id] || entry.pronoun_id || null;
+        pronounsCache.set(login, { data: display, timestamp: Date.now() });
+        return { pronouns: display };
+    } catch (e) {
+        return { pronouns: null };
+    }
+}
+
+// ---------------------------------------------------------------------------
+// Known Bots List
+// ---------------------------------------------------------------------------
+
+const HARDCODED_BOTS = new Set([
+    "nightbot", "streamelements", "moobot", "fossabot", "streamlabs",
+    "soundalerts", "stay_hydrated_bot", "botisimo", "wizebot", "deepbot",
+    "ohbot", "coebot", "phantombot", "ankhbot", "vivbot",
+    "streamcaptainbot", "own3d", "litzbot", "pokemoncommunitygame",
+    "commanderroot", "lurxx", "virgoproz", "blerp",
+]);
+
+let knownBots = new Set(HARDCODED_BOTS);
+let botsLastFetched = 0;
+const BOTS_TTL = 60 * 60 * 1000; // 1 hour
+
+async function fetchKnownBots() {
+    if (Date.now() - botsLastFetched < BOTS_TTL) return knownBots;
+    try {
+        const data = await safeFetch("https://api.twitchinsights.net/v1/bots/all");
+        if (data && Array.isArray(data.bots)) {
+            const fresh = new Set(HARDCODED_BOTS);
+            for (const bot of data.bots) {
+                if (Array.isArray(bot) && bot[0]) {
+                    fresh.add(bot[0].toLowerCase());
+                }
+            }
+            knownBots = fresh;
+            botsLastFetched = Date.now();
+            console.log(`[Twitch Plus] Known bots list updated: ${knownBots.size} bots`);
+        }
+    } catch (e) {
+        console.warn("[Twitch Plus] Failed to fetch bot list:", e);
+    }
+    return knownBots;
+}
+
+// Fetch bot list on startup
+fetchKnownBots();
+
+// ---------------------------------------------------------------------------
+// YouTube oEmbed Preview
+// ---------------------------------------------------------------------------
+
+const youtubeCache = new Map();
+const YOUTUBE_TTL = 60 * 60 * 1000; // 1 hour
+
+async function fetchYoutubePreview(url) {
+    if (!url) return { preview: null };
+
+    const cached = youtubeCache.get(url);
+    if (cached && Date.now() - cached.timestamp < YOUTUBE_TTL) {
+        return { preview: cached.data };
+    }
+
+    try {
+        const oembedUrl = `https://www.youtube.com/oembed?url=${encodeURIComponent(url)}&format=json`;
+        const data = await safeFetch(oembedUrl);
+        if (!data) {
+            youtubeCache.set(url, { data: null, timestamp: Date.now() });
+            return { preview: null };
+        }
+        const preview = {
+            title: data.title || "",
+            author: data.author_name || "",
+            thumbnail: data.thumbnail_url || "",
+        };
+        youtubeCache.set(url, { data: preview, timestamp: Date.now() });
+        return { preview };
+    } catch (e) {
+        return { preview: null };
+    }
+}
 
 // ---------------------------------------------------------------------------
 // 7TV EventAPI WebSocket

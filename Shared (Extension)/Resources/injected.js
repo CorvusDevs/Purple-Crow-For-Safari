@@ -133,6 +133,11 @@
 
     function parseChannelFromPath(pathname) {
         // Twitch channel URLs: /channelname or /channelname/videos etc.
+        // VOD/clip pages are NOT channel pages even though they contain a username:
+        //   /username/clip/ClipName  → clip page
+        //   /videos/123456           → VOD page
+        if (pathname.includes("/clip/") || pathname.includes("/videos/")) return null;
+
         // Exclude known non-channel paths
         const excluded = new Set([
             "directory", "downloads", "jobs", "turbo", "settings",
@@ -193,82 +198,9 @@
     }, 500);
 
     // ---------------------------------------------------------------------------
-    // 4. Audio Compressor
+    // 4. (Removed) Audio Compressor — not possible in Safari due to WebKit bug
+    //    #231656: createMediaElementSource() doesn't route HLS/MSE audio.
     // ---------------------------------------------------------------------------
-
-    let compressorCtx = null;
-    let compressorNode = null;
-    let sourceNode = null;
-    let compressorEnabled = false;
-
-    function enableAudioCompressor() {
-        if (compressorEnabled) return;
-        const video = document.querySelector("video");
-        if (!video) {
-            console.warn("[Twitch Plus] No video element found for audio compressor.");
-            return;
-        }
-
-        try {
-            const AudioCtx = window.AudioContext || window.webkitAudioContext;
-            if (!AudioCtx) {
-                console.warn("[Twitch Plus] AudioContext not supported.");
-                return;
-            }
-
-            // Only create source once per video element
-            if (!video.__tpAudioSource) {
-                compressorCtx = new AudioCtx();
-                sourceNode = compressorCtx.createMediaElementSource(video);
-                video.__tpAudioSource = sourceNode;
-                video.__tpAudioCtx = compressorCtx;
-            } else {
-                sourceNode = video.__tpAudioSource;
-                compressorCtx = video.__tpAudioCtx;
-            }
-
-            compressorNode = compressorCtx.createDynamicsCompressor();
-
-            // Conservative defaults for stream audio normalization
-            compressorNode.threshold.setValueAtTime(-50, compressorCtx.currentTime);
-            compressorNode.knee.setValueAtTime(40, compressorCtx.currentTime);
-            compressorNode.ratio.setValueAtTime(12, compressorCtx.currentTime);
-            compressorNode.attack.setValueAtTime(0, compressorCtx.currentTime);
-            compressorNode.release.setValueAtTime(0.25, compressorCtx.currentTime);
-
-            // Route: source -> compressor -> destination
-            sourceNode.disconnect();
-            sourceNode.connect(compressorNode);
-            compressorNode.connect(compressorCtx.destination);
-
-            // Resume context if suspended (Safari autoplay policy)
-            if (compressorCtx.state === "suspended") {
-                compressorCtx.resume();
-            }
-
-            compressorEnabled = true;
-            console.log("[Twitch Plus] Audio compressor enabled.");
-        } catch (e) {
-            console.error("[Twitch Plus] Failed to enable audio compressor:", e);
-        }
-    }
-
-    function disableAudioCompressor() {
-        if (!compressorEnabled || !sourceNode || !compressorCtx) return;
-
-        try {
-            sourceNode.disconnect();
-            if (compressorNode) compressorNode.disconnect();
-            sourceNode.connect(compressorCtx.destination);
-            compressorEnabled = false;
-            console.log("[Twitch Plus] Audio compressor disabled (bypass).");
-        } catch (e) {
-            console.error("[Twitch Plus] Failed to disable audio compressor:", e);
-        }
-    }
-
-    document.addEventListener("tp-enable-compressor", () => enableAudioCompressor());
-    document.addEventListener("tp-disable-compressor", () => disableAudioCompressor());
 
     // ---------------------------------------------------------------------------
     // 5. Auto Quality Control
@@ -366,6 +298,128 @@
             return Promise.resolve();
         };
     }
+
+    // ---------------------------------------------------------------------------
+    // 7. Enhanced User Card Data (GQL)
+    // ---------------------------------------------------------------------------
+
+    /**
+     * Fetch user data via Twitch's GQL API.
+     * Requires the auth token from cookies (available in page world).
+     */
+    document.addEventListener("tp-request-user-data", async (e) => {
+        const { login } = e.detail || {};
+        if (!login) return;
+
+        const authToken = extractAuthToken();
+        const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko"; // Twitch first-party client ID
+
+        try {
+            const resp = await fetch("https://gql.twitch.tv/gql", {
+                method: "POST",
+                headers: {
+                    "Client-Id": clientId,
+                    ...(authToken ? { "Authorization": `OAuth ${authToken}` } : {}),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify([
+                    {
+                        operationName: "ViewerCard",
+                        variables: { channelLogin: parseChannelFromPath(location.pathname), targetLogin: login },
+                        extensions: {
+                            persistedQuery: {
+                                version: 1,
+                                sha256Hash: "0a269a1a94a7b44e79e52cd23b27e657ab269c08ebf3326b94de0e1a4c1409b4",
+                            },
+                        },
+                    },
+                ]),
+            });
+
+            if (!resp.ok) throw new Error(`GQL returned ${resp.status}`);
+            const json = await resp.json();
+            const userData = json?.[0]?.data?.targetUser;
+            const relationship = json?.[0]?.data?.targetUser?.relationship;
+
+            document.dispatchEvent(new CustomEvent("tp-user-data-response", {
+                detail: {
+                    login,
+                    createdAt: userData?.createdAt || null,
+                    followDate: relationship?.followedAt || null,
+                },
+            }));
+        } catch (err) {
+            console.warn("[Twitch Plus] GQL user card fetch failed:", err);
+            // Fallback: try simpler query
+            try {
+                const resp = await fetch("https://gql.twitch.tv/gql", {
+                    method: "POST",
+                    headers: {
+                        "Client-Id": clientId,
+                        "Content-Type": "application/json",
+                    },
+                    body: JSON.stringify({
+                        query: `query { user(login: "${login}") { createdAt } }`,
+                    }),
+                });
+                const json = await resp.json();
+                document.dispatchEvent(new CustomEvent("tp-user-data-response", {
+                    detail: {
+                        login,
+                        createdAt: json?.data?.user?.createdAt || null,
+                        followDate: null,
+                    },
+                }));
+            } catch (e2) {
+                console.warn("[Twitch Plus] GQL fallback also failed:", e2);
+                document.dispatchEvent(new CustomEvent("tp-user-data-response", {
+                    detail: { login, createdAt: null, followDate: null },
+                }));
+            }
+        }
+    });
+
+    // ---------------------------------------------------------------------------
+    // 8. VOD Metadata Fetcher (GQL)
+    // ---------------------------------------------------------------------------
+
+    document.addEventListener("tp-request-vod-data", async (e) => {
+        const { videoId } = e.detail || {};
+        if (!videoId) return;
+
+        const clientId = "kimne78kx3ncx6brgo4mv6wki5h1ko";
+        const authToken = extractAuthToken();
+
+        try {
+            const resp = await fetch("https://gql.twitch.tv/gql", {
+                method: "POST",
+                headers: {
+                    "Client-Id": clientId,
+                    ...(authToken ? { "Authorization": `OAuth ${authToken}` } : {}),
+                    "Content-Type": "application/json",
+                },
+                body: JSON.stringify({
+                    query: `query { video(id: "${videoId}") { createdAt title broadcastType } }`,
+                }),
+            });
+            const json = await resp.json();
+            const video = json?.data?.video;
+            document.dispatchEvent(new CustomEvent("tp-vod-data-response", {
+                detail: {
+                    videoId,
+                    createdAt: video?.createdAt || null,
+                    title: video?.title || null,
+                    broadcastType: video?.broadcastType || null,
+                },
+            }));
+            console.log("[Twitch Plus] VOD data fetched:", video?.createdAt);
+        } catch (e) {
+            console.error("[Twitch Plus] Failed to fetch VOD data:", e);
+            document.dispatchEvent(new CustomEvent("tp-vod-data-response", {
+                detail: { videoId, createdAt: null },
+            }));
+        }
+    });
 
     console.log("[Twitch Plus] Page-world script loaded.");
 })();

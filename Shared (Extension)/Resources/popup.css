@@ -3,14 +3,11 @@
 :root {
     --bg-primary: #0e0e10;
     --bg-secondary: #18181b;
-    --bg-hover: #232328;
     --text-primary: #efeff1;
     --text-secondary: #adadb8;
     --accent: #9147ff;
     --accent-hover: #772ce8;
     --border: #2f2f35;
-    --toggle-bg: #3a3a3d;
-    --toggle-active: #9147ff;
 }
 
 * {
@@ -20,7 +17,7 @@
 }
 
 body {
-    width: 280px;
+    width: 240px;
     background: var(--bg-primary);
     color: var(--text-primary);
     font-family: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
@@ -47,94 +44,58 @@ body {
     border-radius: 4px;
 }
 
-/* Master toggle */
-.master-toggle {
-    padding: 8px 16px;
-    border-bottom: 1px solid var(--border);
-    background: var(--bg-secondary);
+/* Content area */
+.content {
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 8px;
 }
 
-/* Sections */
-.section {
-    padding: 8px 16px 4px;
-    border-bottom: 1px solid var(--border);
-}
-
-.section:last-of-type {
-    border-bottom: none;
-}
-
-.section h2 {
-    font-size: 11px;
-    font-weight: 700;
-    text-transform: uppercase;
-    letter-spacing: 0.05em;
-    color: var(--text-secondary);
-    margin-bottom: 4px;
-}
-
-/* Toggle rows */
-.toggle-row {
+/* Open Settings button */
+.open-settings-btn {
     display: flex;
     align-items: center;
-    justify-content: space-between;
-    padding: 6px 0;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    padding: 10px 16px;
+    background: var(--accent);
+    color: #fff;
+    border: none;
+    border-radius: 6px;
+    font-size: 14px;
+    font-weight: 600;
+    font-family: inherit;
     cursor: pointer;
-    user-select: none;
+    transition: background 0.15s;
 }
 
-.toggle-row:hover {
-    background: transparent;
+.open-settings-btn:hover {
+    background: var(--accent-hover);
 }
 
-.toggle-label {
-    color: var(--text-primary);
-    font-size: 13px;
+.open-settings-btn:active {
+    transform: scale(0.98);
 }
 
-/* Custom toggle switch */
-.toggle-row input[type="checkbox"] {
-    display: none;
+.open-settings-btn:disabled {
+    opacity: 0.4;
+    cursor: default;
+    pointer-events: none;
 }
 
-.toggle-slider {
-    position: relative;
-    width: 36px;
-    height: 20px;
-    background: var(--toggle-bg);
-    border-radius: 10px;
-    transition: background 0.2s;
+.open-settings-btn svg {
     flex-shrink: 0;
 }
 
-.toggle-slider::after {
-    content: "";
-    position: absolute;
-    top: 2px;
-    left: 2px;
-    width: 16px;
-    height: 16px;
-    background: white;
-    border-radius: 50%;
-    transition: transform 0.2s;
-}
-
-.toggle-row input[type="checkbox"]:checked + .toggle-slider {
-    background: var(--toggle-active);
-}
-
-.toggle-row input[type="checkbox"]:checked + .toggle-slider::after {
-    transform: translateX(16px);
-}
-
-/* Hint text */
+/* Status / hint text */
 .popup-hint {
-    padding: 8px 16px;
     color: var(--text-secondary);
     font-size: 11px;
     line-height: 1.4;
     text-align: center;
-    border-bottom: 1px solid var(--border);
 }
 
 /* Footer */

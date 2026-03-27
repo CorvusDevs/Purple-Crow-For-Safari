@@ -252,6 +252,7 @@ body.tp-theater-oled {
     overflow: visible;
 }
 
+
 .tp-settings-wrapper {
     position: relative;
     display: inline-flex;
@@ -308,12 +309,12 @@ body.tp-theater-oled {
     }
 }
 
-/* Panel header with logo and close */
+/* Panel header with logo, title, master toggle, and close */
 .tp-panel-header {
     display: flex;
     align-items: center;
     gap: 10px;
-    padding: 16px 20px;
+    padding: 12px 16px;
     border-bottom: 1px solid #2f2f35;
     flex-shrink: 0;
     background: #18181b;
@@ -327,11 +328,15 @@ body.tp-theater-oled {
 
 .tp-panel-header h3 {
     margin: 0;
-    font-size: 16px;
+    font-size: 15px;
     font-weight: 700;
     color: #efeff1;
     letter-spacing: 0.01em;
     flex: 1;
+}
+
+.tp-panel-header .tp-header-toggle {
+    flex-shrink: 0;
 }
 
 .tp-panel-header .tp-panel-close {
@@ -356,81 +361,90 @@ body.tp-theater-oled {
     color: #efeff1;
 }
 
-/* Tab navigation bar */
-.tp-tab-bar {
+/* Sidebar layout — two-column body */
+.tp-sidebar-layout {
     display: flex;
-    flex-wrap: wrap;
-    gap: 2px;
-    padding: 8px 12px;
-    border-bottom: 1px solid #2f2f35;
-    flex-shrink: 0;
-    background: #18181b;
+    flex: 1;
+    min-height: 0;
 }
 
-.tp-tab-btn {
+/* Left sidebar navigation */
+.tp-sidebar {
+    width: 88px;
+    flex-shrink: 0;
     display: flex;
+    flex-direction: column;
+    gap: 2px;
+    padding: 8px 6px;
+    border-right: 1px solid #2f2f35;
+    background: #18181b;
+    overflow-y: auto;
+}
+
+.tp-sidebar-btn {
+    display: flex;
+    flex-direction: column;
     align-items: center;
-    gap: 4px;
-    padding: 6px 8px;
+    gap: 3px;
+    padding: 8px 4px;
     border: none;
-    border-radius: 6px;
+    border-radius: 8px;
     background: transparent;
-    color: #adadb8;
+    color: #7b7b8b;
     font-family: inherit;
-    font-size: 11px;
+    font-size: 10px;
     font-weight: 600;
     cursor: pointer;
-    white-space: nowrap;
     transition: background 0.15s, color 0.15s;
-    flex-shrink: 0;
 }
 
-.tp-tab-btn:hover {
-    background: rgba(255, 255, 255, 0.08);
+.tp-sidebar-btn:hover {
+    background: rgba(255, 255, 255, 0.06);
     color: #dedee3;
 }
 
-.tp-tab-btn.tp-tab-active {
+.tp-sidebar-btn.tp-sidebar-active {
     background: rgba(145, 71, 255, 0.15);
     color: #bf94ff;
 }
 
-.tp-tab-btn svg {
-    width: 14px;
-    height: 14px;
+.tp-sidebar-btn svg {
+    width: 18px;
+    height: 18px;
     flex-shrink: 0;
 }
 
-/* Scrollable content area */
-.tp-settings-panel-content {
+/* Right content area */
+.tp-sidebar-content {
     flex: 1;
     overflow-y: auto;
     padding: 12px 0 20px;
+    min-width: 0;
 }
 
-.tp-settings-panel-content::-webkit-scrollbar {
+.tp-sidebar-content::-webkit-scrollbar {
     width: 6px;
 }
 
-.tp-settings-panel-content::-webkit-scrollbar-track {
+.tp-sidebar-content::-webkit-scrollbar-track {
     background: transparent;
 }
 
-.tp-settings-panel-content::-webkit-scrollbar-thumb {
+.tp-sidebar-content::-webkit-scrollbar-thumb {
     background: #3a3a3d;
     border-radius: 3px;
 }
 
-.tp-settings-panel-content::-webkit-scrollbar-thumb:hover {
+.tp-sidebar-content::-webkit-scrollbar-thumb:hover {
     background: #53535f;
 }
 
-/* Tab content containers */
-.tp-tab-content {
+/* Category content containers */
+.tp-category-content {
     display: none;
 }
 
-.tp-tab-content.tp-tab-visible {
+.tp-category-content.tp-category-visible {
     display: block;
 }
 
@@ -558,21 +572,12 @@ body.tp-theater-oled {
     pointer-events: none;
 }
 
-/* Master toggle — special styling */
-.tp-master-toggle {
-    margin: 8px 12px;
-    background: #18181b;
-    border: 1px solid #2f2f35;
-    border-radius: 8px;
-}
-
-.tp-master-toggle .tp-toggle-row {
-    padding: 12px 16px;
-}
-
-.tp-master-toggle .tp-toggle-label {
-    font-size: 14px;
-    font-weight: 600;
+/* Master toggle in header */
+.tp-header-toggle .tp-toggle-switch {
+    position: relative;
+    width: 36px;
+    height: 20px;
+    flex-shrink: 0;
 }
 
 /* ---------------------------------------------------------------------------
@@ -728,31 +733,6 @@ body.tp-theater-oled {
 }
 
 /* Profile section buttons */
-.tp-profile-btn {
-    background: #9147ff;
-    color: #fff;
-    border: none;
-    border-radius: 6px;
-    padding: 8px 16px;
-    font-size: 13px;
-    font-weight: 600;
-    font-family: inherit;
-    cursor: pointer;
-    transition: background 0.15s;
-}
-
-.tp-profile-btn:hover {
-    background: #772ce8;
-}
-
-.tp-profile-btn-secondary {
-    background: #3a3a3d;
-}
-
-.tp-profile-btn-secondary:hover {
-    background: #53535f;
-}
-
 /* Panel footer */
 .tp-panel-footer {
     padding: 10px 20px;
@@ -906,4 +886,911 @@ body.tp-theater-oled {
     background: rgba(255, 68, 68, 0.2);
     color: #ff4444;
     border-color: #ff4444;
+}
+
+/* ---------------------------------------------------------------------------
+   Emote Menu / Picker
+   --------------------------------------------------------------------------- */
+
+.tp-emote-menu-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    cursor: pointer;
+    color: #efeff1;
+    flex-shrink: 0;
+    transition: background-color 0.1s ease;
+}
+
+.tp-emote-menu-btn:hover {
+    background-color: rgba(255, 255, 255, 0.15);
+}
+
+.tp-emote-menu-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.tp-emote-menu {
+    position: fixed;
+    width: 340px;
+    height: 400px;
+    background: #1f1f23;
+    border: 1px solid #3a3a3d;
+    border-radius: 8px;
+    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.5);
+    z-index: 9997;
+    display: flex;
+    flex-direction: column;
+    font-family: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    animation: tp-emote-menu-in 0.15s ease-out;
+}
+
+@keyframes tp-emote-menu-in {
+    from { opacity: 0; transform: translateY(8px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+.tp-emote-menu-header {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 8px 10px;
+    border-bottom: 1px solid #2f2f35;
+    flex-shrink: 0;
+}
+
+.tp-emote-search {
+    flex: 1;
+    background: #18181b;
+    color: #efeff1;
+    border: 1px solid #3a3a3d;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+}
+
+.tp-emote-search:focus {
+    border-color: #9147ff;
+}
+
+.tp-emote-search::placeholder {
+    color: #53535f;
+}
+
+.tp-emote-menu-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #adadb8;
+    cursor: pointer;
+    font-size: 16px;
+    flex-shrink: 0;
+}
+
+.tp-emote-menu-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #efeff1;
+}
+
+.tp-emote-tabs {
+    display: flex;
+    gap: 2px;
+    padding: 4px 8px;
+    border-bottom: 1px solid #2f2f35;
+    flex-shrink: 0;
+}
+
+.tp-emote-tab {
+    padding: 4px 10px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #7b7b8b;
+    font-family: inherit;
+    font-size: 11px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tp-emote-tab:hover {
+    background: rgba(255, 255, 255, 0.06);
+    color: #dedee3;
+}
+
+.tp-emote-tab.tp-emote-tab-active {
+    background: rgba(145, 71, 255, 0.15);
+    color: #bf94ff;
+}
+
+.tp-emote-grid {
+    flex: 1;
+    overflow-y: auto;
+    padding: 8px;
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(36px, 1fr));
+    gap: 4px;
+    align-content: start;
+}
+
+.tp-emote-grid::-webkit-scrollbar {
+    width: 6px;
+}
+
+.tp-emote-grid::-webkit-scrollbar-track {
+    background: transparent;
+}
+
+.tp-emote-grid::-webkit-scrollbar-thumb {
+    background: #3a3a3d;
+    border-radius: 3px;
+}
+
+.tp-emote-cell {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background 0.1s;
+}
+
+.tp-emote-cell:hover {
+    background: rgba(145, 71, 255, 0.2);
+}
+
+.tp-emote-cell img {
+    max-width: 28px;
+    max-height: 28px;
+    object-fit: contain;
+}
+
+.tp-emote-grid-empty {
+    grid-column: 1 / -1;
+    text-align: center;
+    color: #53535f;
+    font-size: 13px;
+    padding: 24px 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Pronouns Badge
+   --------------------------------------------------------------------------- */
+
+.tp-pronoun-badge {
+    color: #adadb8;
+    font-size: 11px;
+    font-weight: 400;
+    margin-left: 4px;
+    opacity: 0.8;
+}
+
+/* ---------------------------------------------------------------------------
+   Enhanced User Card Extras
+   --------------------------------------------------------------------------- */
+
+.tp-usercard-extra {
+    padding: 8px 12px;
+    border-top: 1px solid #2f2f35;
+    font-size: 12px;
+    color: #adadb8;
+}
+
+.tp-usercard-row {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    padding: 3px 0;
+}
+
+.tp-usercard-row svg {
+    width: 14px;
+    height: 14px;
+    fill: #7b7b8b;
+    flex-shrink: 0;
+}
+
+.tp-usercard-row span {
+    color: #dedee3;
+}
+
+/* ---------------------------------------------------------------------------
+   Slow Mode Countdown
+   --------------------------------------------------------------------------- */
+
+.tp-slow-countdown {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: rgba(14, 14, 16, 0.85);
+    color: #bf94ff;
+    font-size: 14px;
+    font-weight: 700;
+    border-radius: inherit;
+    pointer-events: none;
+    z-index: 5;
+}
+
+/* ---------------------------------------------------------------------------
+   Spam / Bot Hidden Messages
+   --------------------------------------------------------------------------- */
+
+.tp-spam-hidden {
+    display: none !important;
+}
+
+.tp-bot-hidden {
+    display: none !important;
+}
+
+/* Emote/Message Combo Widget */
+.tp-combo-widget {
+    position: absolute;
+    bottom: 90px;
+    right: 10px;
+    z-index: 9999;
+    background: rgba(24, 24, 27, 0.92);
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    border-radius: 6px;
+    padding: 6px 8px;
+    min-width: 120px;
+    max-width: 220px;
+    pointer-events: none;
+    font-size: 12px;
+    backdrop-filter: blur(8px);
+    -webkit-backdrop-filter: blur(8px);
+}
+
+.tp-combo-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 8px;
+    padding: 2px 0;
+}
+
+.tp-combo-text {
+    color: #efeff1;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 1;
+    min-width: 0;
+}
+
+.tp-combo-count {
+    color: #bf94ff;
+    font-weight: 700;
+    flex-shrink: 0;
+    font-variant-numeric: tabular-nums;
+}
+
+/* ---------------------------------------------------------------------------
+   YouTube Link Preview Tooltip
+   --------------------------------------------------------------------------- */
+
+.tp-yt-preview {
+    position: fixed;
+    z-index: 10000;
+    background: #18181b;
+    border: 1px solid #3a3a3d;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    padding: 8px;
+    pointer-events: none;
+    display: flex;
+    gap: 10px;
+    max-width: 360px;
+    font-family: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+.tp-yt-preview img {
+    width: 160px;
+    height: 90px;
+    border-radius: 4px;
+    object-fit: cover;
+    flex-shrink: 0;
+}
+
+.tp-yt-preview-info {
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    gap: 4px;
+    min-width: 0;
+}
+
+.tp-yt-preview-title {
+    color: #efeff1;
+    font-size: 13px;
+    font-weight: 600;
+    line-height: 1.3;
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+}
+
+.tp-yt-preview-author {
+    color: #adadb8;
+    font-size: 11px;
+}
+
+/* ---------------------------------------------------------------------------
+   Player Buttons (PiP, Screenshot)
+   --------------------------------------------------------------------------- */
+
+.tp-player-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 30px;
+    height: 30px;
+    padding: 0;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #efeff1;
+    cursor: pointer;
+    transition: background 0.15s, color 0.15s;
+}
+
+.tp-player-btn:hover {
+    background: rgba(255, 255, 255, 0.2);
+}
+
+.tp-player-btn svg {
+    width: 20px;
+    height: 20px;
+    fill: currentColor;
+}
+
+.tp-player-btn.tp-pip-active svg {
+    color: #bf94ff;
+}
+
+/* Screenshot flash effect */
+.tp-screenshot-flash {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    background: white;
+    z-index: 99999;
+    pointer-events: none;
+    animation: tp-flash 0.3s ease-out forwards;
+}
+
+@keyframes tp-flash {
+    from { opacity: 0.5; }
+    to { opacity: 0; }
+}
+
+/* ---------------------------------------------------------------------------
+   Channel Preview Tooltip
+   --------------------------------------------------------------------------- */
+
+.tp-channel-preview {
+    position: fixed;
+    z-index: 10000;
+    background: #18181b;
+    border: 1px solid #3a3a3d;
+    border-radius: 8px;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    padding: 4px;
+    pointer-events: none;
+}
+
+.tp-channel-preview img {
+    width: 320px;
+    height: 180px;
+    border-radius: 6px;
+    object-fit: cover;
+    display: block;
+}
+
+/* ---------------------------------------------------------------------------
+   Chat Search Overlay
+   --------------------------------------------------------------------------- */
+
+.tp-chat-search {
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 100;
+    background: #18181b;
+    border-bottom: 1px solid #2f2f35;
+    padding: 8px 12px;
+    display: flex;
+    gap: 8px;
+    align-items: center;
+    animation: tp-search-slide 0.15s ease-out;
+}
+
+@keyframes tp-search-slide {
+    from { transform: translateY(-100%); }
+    to { transform: translateY(0); }
+}
+
+.tp-chat-search input {
+    flex: 1;
+    background: #2f2f35;
+    color: #efeff1;
+    border: 1px solid #3a3a3d;
+    border-radius: 6px;
+    padding: 6px 10px;
+    font-size: 13px;
+    font-family: inherit;
+    outline: none;
+    min-width: 0;
+}
+
+.tp-chat-search input:focus {
+    border-color: #9147ff;
+}
+
+.tp-chat-search-count {
+    color: #7b7b8b;
+    font-size: 12px;
+    white-space: nowrap;
+}
+
+.tp-chat-search-close {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: #adadb8;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.tp-chat-search-close:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: #efeff1;
+}
+
+.tp-search-highlight {
+    background: rgba(255, 215, 0, 0.3) !important;
+    border-left: 3px solid #ffd700;
+}
+
+.tp-search-no-match {
+    opacity: 0.2;
+}
+
+/* ---------------------------------------------------------------------------
+   Clip Download Button
+   --------------------------------------------------------------------------- */
+
+.tp-clip-download-btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 5px 10px;
+    background: #9147ff;
+    color: #fff;
+    border: none;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+.tp-clip-download-btn:hover {
+    background: #772ce8;
+}
+
+.tp-clip-download-btn svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+   Chat Image Preview (inline)
+   --------------------------------------------------------------------------- */
+
+.tp-image-preview {
+    display: block;
+    max-width: 300px;
+    max-height: 200px;
+    border-radius: 6px;
+    margin: 4px 0;
+    border: 1px solid rgba(255, 255, 255, 0.1);
+    cursor: pointer;
+    transition: opacity 0.15s;
+}
+
+.tp-image-preview:hover {
+    opacity: 0.85;
+}
+
+.tp-image-preview-error {
+    display: none;
+}
+
+/* ---------------------------------------------------------------------------
+   Watch Time Tracker
+   --------------------------------------------------------------------------- */
+
+.tp-watch-time {
+    display: inline-flex;
+    align-items: center;
+    gap: 4px;
+    padding: 2px 8px;
+    background: rgba(255, 255, 255, 0.08);
+    border-radius: 4px;
+    font-size: 11px;
+    color: #adadb8;
+    margin-left: 8px;
+}
+
+.tp-watch-time svg {
+    width: 12px;
+    height: 12px;
+    fill: currentColor;
+}
+
+/* ---------------------------------------------------------------------------
+   Move Chat to Left
+   --------------------------------------------------------------------------- */
+
+/* ---------------------------------------------------------------------------
+   Move Chat to Left — CSS-only approach (based on BTTV/FFZ technique).
+   Twitch uses a flex-row layout: .side-nav | .twilight-main | .right-column
+   We reorder them with CSS `order` and fix positioning/width side effects.
+   --------------------------------------------------------------------------- */
+
+/* Reorder the three main flex children */
+body.tp-chat-left .right-column {
+    order: 1 !important;
+    z-index: 3 !important;
+}
+
+body.tp-chat-left .twilight-main {
+    order: 2 !important;
+}
+
+body.tp-chat-left .side-nav,
+body.tp-chat-left div:has(> .side-nav) {
+    order: 3 !important;
+}
+
+/* Fix player/content width — Twitch calculates these based on chat position */
+body.tp-chat-left .channel-root__player--with-chat {
+    width: 100% !important;
+}
+
+body.tp-chat-left .channel-info-content {
+    width: 100% !important;
+}
+
+body.tp-chat-left .channel-root {
+    width: unset !important;
+}
+
+/* Fix right-column positioning — Twitch uses absolute positioning + transforms
+   that break when the element is reordered via CSS order */
+body.tp-chat-left .channel-root__right-column.channel-root__right-column--expanded:not(.channel-root__right-column--home) {
+    position: relative !important;
+    transform: none !important;
+}
+
+/* Persistent player width fix */
+body.tp-chat-left div:has(> .channel-root) > .persistent-player {
+    width: 100%;
+}
+
+/* Flip collapse/toggle arrow buttons so they point the correct direction */
+body.tp-chat-left .side-nav .collapse-toggle {
+    transform: rotate(180deg);
+}
+
+body.tp-chat-left .right-column__toggle-visibility {
+    left: 1rem;
+    transform: rotate(180deg);
+}
+
+/* Theatre mode: swap left/right positioning */
+body.tp-chat-left .persistent-player--theatre,
+body.tp-chat-left .channel-page__video-player--theatre-mode {
+    left: auto !important;
+    right: 0;
+}
+
+body.tp-chat-left .right-column.right-column--theatre {
+    z-index: 3001 !important;
+    right: unset !important;
+    left: 0 !important;
+}
+
+/* ---------------------------------------------------------------------------
+   VOD Real-Time Clock
+   --------------------------------------------------------------------------- */
+
+.tp-vod-clock {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    padding: 4px 10px;
+    background: rgba(145, 71, 255, 0.12);
+    border: 1px solid rgba(145, 71, 255, 0.25);
+    border-radius: 6px;
+    font-size: 13px;
+    color: #bf94ff;
+    font-weight: 500;
+    font-variant-numeric: tabular-nums;
+    white-space: nowrap;
+    cursor: default;
+    margin-right: 6px;
+}
+
+.tp-vod-clock svg {
+    width: 14px;
+    height: 14px;
+    fill: currentColor;
+    flex-shrink: 0;
+}
+
+/* When in player controls, match the compact style */
+.player-controls__right-control-group .tp-vod-clock {
+    padding: 2px 8px;
+    font-size: 12px;
+    margin-right: 4px;
+    border: none;
+    background: rgba(255, 255, 255, 0.08);
+}
+
+/* ---------------------------------------------------------------------------
+   Unwanted Content Filter (hidden items in directory)
+   --------------------------------------------------------------------------- */
+
+.tp-unwanted-hidden {
+    display: none !important;
+}
+
+/* ---------------------------------------------------------------------------
+   Debug Overlay
+   --------------------------------------------------------------------------- */
+
+.tp-debug-btn {
+    width: 100%;
+    padding: 8px 12px;
+    background: rgba(255, 255, 255, 0.08);
+    border: 1px solid rgba(255, 255, 255, 0.15);
+    border-radius: 4px;
+    color: #efeff1;
+    cursor: pointer;
+    font-size: 12px;
+}
+
+.tp-debug-btn:hover {
+    background: rgba(255, 255, 255, 0.15);
+}
+
+.tp-debug-overlay {
+    position: fixed;
+    bottom: 10px;
+    left: 10px;
+    width: 380px;
+    max-height: 400px;
+    background: rgba(14, 14, 16, 0.95);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    border-radius: 6px;
+    z-index: 999999;
+    font-family: "SF Mono", "Menlo", "Monaco", monospace;
+    font-size: 11px;
+    color: #efeff1;
+    overflow: hidden;
+}
+
+.tp-debug-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 10px;
+    background: rgba(145, 71, 255, 0.3);
+    font-weight: 600;
+    font-size: 12px;
+}
+
+.tp-debug-close {
+    background: none;
+    border: none;
+    color: #efeff1;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 0 4px;
+}
+
+.tp-debug-content {
+    padding: 8px 10px;
+    overflow-y: auto;
+    max-height: 350px;
+    line-height: 1.6;
+}
+
+/* ── Split Chat Theme Selector ── */
+.tp-split-theme-selector {
+    padding: 8px 12px 12px;
+}
+
+.tp-theme-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 6px;
+}
+
+.tp-theme-btn {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 4px;
+    padding: 6px 4px;
+    background: #1f1f23;
+    border: 2px solid transparent;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: border-color 0.15s, background 0.15s;
+    color: #adadb8;
+}
+
+.tp-theme-btn:hover {
+    background: #26262c;
+    border-color: #3a3a3d;
+}
+
+.tp-theme-btn.tp-theme-active {
+    border-color: #9147ff;
+    background: #26262c;
+}
+
+.tp-theme-swatch {
+    display: flex;
+    width: 100%;
+    height: 18px;
+    border-radius: 4px;
+    overflow: hidden;
+}
+
+.tp-theme-stripe {
+    flex: 1;
+    min-width: 0;
+}
+
+.tp-theme-swatch-custom {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: linear-gradient(135deg, #9147ff33, #ff69b433, #00b4d833);
+    color: #adadb8;
+}
+
+.tp-theme-label {
+    font-size: 9px;
+    line-height: 1.2;
+    text-align: center;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
+}
+
+/* Custom color editor */
+.tp-custom-colors-editor {
+    margin-top: 10px;
+    padding-top: 10px;
+    border-top: 1px solid #2f2f35;
+}
+
+.tp-custom-colors-label {
+    font-size: 11px;
+    color: #adadb8;
+    margin-bottom: 8px;
+}
+
+.tp-custom-swatch-row {
+    display: flex;
+    gap: 6px;
+    flex-wrap: wrap;
+    align-items: center;
+}
+
+.tp-custom-swatch {
+    position: relative;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    cursor: pointer;
+    border: 2px solid #3a3a3d;
+    transition: border-color 0.15s, transform 0.1s;
+}
+
+.tp-custom-swatch:hover {
+    border-color: #9147ff;
+    transform: scale(1.08);
+}
+
+.tp-custom-color-input {
+    position: absolute;
+    inset: 0;
+    opacity: 0;
+    width: 100%;
+    height: 100%;
+    cursor: pointer;
+    border: none;
+    padding: 0;
+}
+
+.tp-custom-swatch-remove {
+    position: absolute;
+    top: -6px;
+    right: -6px;
+    width: 16px;
+    height: 16px;
+    border-radius: 50%;
+    background: #e91916;
+    color: #fff;
+    border: none;
+    font-size: 11px;
+    line-height: 14px;
+    text-align: center;
+    cursor: pointer;
+    display: none;
+    padding: 0;
+}
+
+.tp-custom-swatch:hover .tp-custom-swatch-remove {
+    display: block;
+}
+
+.tp-custom-swatch-add {
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
+    background: #2f2f35;
+    border: 2px dashed #53535f;
+    color: #adadb8;
+    font-size: 18px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: border-color 0.15s, color 0.15s;
+}
+
+.tp-custom-swatch-add:hover {
+    border-color: #9147ff;
+    color: #9147ff;
 }
