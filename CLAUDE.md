@@ -54,3 +54,4 @@ Safari Web Extension for macOS/iOS. The extension code lives in `Shared (Extensi
 
 - **Always update the changelog when committing.** Every commit message should follow the pattern `vX.Y.Z — Summary` and include a bulleted list of what changed. Also update `CHANGELOG.md` at the project root with the same version entry so there is a single file tracking all releases.
 - **Update the changelog for significant commits.** When a commit includes new features, major bug fixes, or architectural changes, add an entry to `CHANGELOG.md`. Small tweaks (typos, formatting) don't need a changelog entry.
+- **Never include Claude attribution in commits.** Do not add "Co-Authored-By: Claude" or any Claude/AI attribution to commit messages. Do not add Claude as a contributor on any GitHub repository. All commits should appear as solely authored by the user.

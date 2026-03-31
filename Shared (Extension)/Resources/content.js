@@ -18,7 +18,8 @@
     // ---------------------------------------------------------------------------
     // State
     // ---------------------------------------------------------------------------
-    let emoteMap = {};           // name -> emoteData
+    let emoteMap = new Map();    // name -> emoteData
+    let emoteNamesSorted = [];   // pre-lowered sorted emote names for autocomplete
     let settings = {};
     let currentChannel = null;   // channel login name
     let currentChannelId = null; // twitch user ID
@@ -101,12 +102,25 @@
 
     /**
      * Get the colors array for the current split chat theme.
+     * Theme mode is cached and updated via a lightweight MutationObserver
+     * on <html> instead of querying the DOM on every chat message.
      */
-    function getSplitChatColors() {
+    let cachedThemeMode = null;
+
+    function detectThemeMode() {
         const isDark = document.querySelector(".tw-root--theme-dark") ||
             document.querySelector("[class*='dark-theme']") ||
             document.documentElement.classList.contains("tw-root--theme-dark");
-        const mode = isDark ? "dark" : "light";
+        cachedThemeMode = isDark ? "dark" : "light";
+        return cachedThemeMode;
+    }
+
+    // Watch for theme changes on the root element (class changes only)
+    const themeObserver = new MutationObserver(() => detectThemeMode());
+    themeObserver.observe(document.documentElement, { attributes: true, attributeFilter: ["class"] });
+
+    function getSplitChatColors() {
+        const mode = cachedThemeMode || detectThemeMode();
 
         const themeKey = settings.splitChatTheme || "default";
 
@@ -129,6 +143,13 @@
     }
     let settingsReady = false;   // gate: true once initial settings are loaded
     let pendingChannel = null;   // channel detected before settings were ready
+
+    // Non-channel path prefixes (shared between content.js and injected.js)
+    const EXCLUDED_PATHS = new Set([
+        "directory", "downloads", "jobs", "turbo", "settings",
+        "subscriptions", "inventory", "wallet", "friends",
+        "moderator", "search", "following", "videos", "",
+    ]);
 
     // New feature state (v3.0.0)
     let knownBots = new Set();         // set of known bot usernames (lowercase)
@@ -232,6 +253,12 @@
     // 3. Emote loading
     // ---------------------------------------------------------------------------
 
+    function rebuildEmoteIndex() {
+        emoteNamesSorted = [...emoteMap.keys()]
+            .map(name => ({ lower: name.toLowerCase(), name }))
+            .sort((a, b) => a.lower.localeCompare(b.lower));
+    }
+
     async function loadEmotes(channelId) {
         try {
             const response = await browser.runtime.sendMessage({
@@ -239,10 +266,11 @@
                 channelId: channelId,
             });
             if (response && response.emoteMap) {
-                emoteMap = response.emoteMap;
+                emoteMap = new Map(Object.entries(response.emoteMap));
+                rebuildEmoteIndex();
                 settings = response.settings || {};
                 console.log(
-                    `[Twitch Plus] Emote map loaded: ${Object.keys(emoteMap).length} emotes`
+                    `[Twitch Plus] Emote map loaded: ${emoteMap.size} emotes`
                 );
 
                 // Subscribe to 7TV EventAPI for live emote updates
@@ -265,7 +293,8 @@
                 action: "getGlobalEmotes",
             });
             if (response && response.emoteMap) {
-                emoteMap = response.emoteMap;
+                emoteMap = new Map(Object.entries(response.emoteMap));
+                rebuildEmoteIndex();
                 settings = response.settings || {};
             }
         } catch (e) {
@@ -392,7 +421,8 @@
         processEmotesInMessage(msg);
 
         // Custom nicknames (before other text processing)
-        if (Object.keys(settings.customNicknames || {}).length > 0) {
+        const nicks = settings.customNicknames;
+        if (nicks && Object.keys(nicks).length > 0) {
             applyCustomNicknames(msg);
         }
 
@@ -616,7 +646,7 @@
      * Scan text fragments in a message and replace emote words with images.
      */
     function processEmotesInMessage(messageEl) {
-        if (Object.keys(emoteMap).length === 0) return;
+        if (emoteMap.size === 0) return;
 
         // Primary: Twitch wraps text in .text-fragment spans
         const textFragments = messageEl.querySelectorAll(
@@ -663,7 +693,7 @@
 
         // First pass: check if any word is an emote
         for (const word of words) {
-            if (emoteMap[word]) {
+            if (emoteMap.has(word)) {
                 hasEmote = true;
                 break;
             }
@@ -676,7 +706,7 @@
         let lastEmoteContainer = null;
 
         for (const word of words) {
-            const emote = emoteMap[word];
+            const emote = emoteMap.get(word);
 
             if (!emote) {
                 // Not an emote — append as text
@@ -946,19 +976,21 @@
             console.log("[Twitch Plus] Auto-claim observer attached to points summary.");
         }
 
-        // Strategy 2: Also use a broader document observer to catch the summary appearing
-        // AND a fallback interval for drops/moments which appear elsewhere
+        // Strategy 2: Fallback interval that self-upgrades to observer once summary appears.
+        // Once the observer is attached, increase the polling interval since the observer
+        // handles the hot path (points). Interval only catches drops/moments.
         autoClaimInterval = setInterval(() => {
-            // If the points summary appeared and we don't have an observer yet, attach one
             if (!autoClaimObserver) {
                 const summary = document.querySelector(".community-points-summary");
                 if (summary) {
                     autoClaimObserver = new MutationObserver(() => tryClaimAll());
                     autoClaimObserver.observe(summary, { childList: true, subtree: true });
                     console.log("[Twitch Plus] Auto-claim observer attached (delayed).");
+                    // Slow down polling now that observer handles points
+                    clearInterval(autoClaimInterval);
+                    autoClaimInterval = setInterval(() => tryClaimAll(), 30000);
                 }
             }
-            // Fallback polling for all claim types
             tryClaimAll();
         }, 5000);
 
@@ -1054,8 +1086,15 @@
             // Stop after 60s to avoid infinite CPU use
             setTimeout(() => clearInterval(pauseInterval), 60000);
 
-            // Also observe new video elements
-            const observer = new MutationObserver(() => pauseVideos());
+            // Also observe new video elements (throttled to avoid firing on every DOM mutation)
+            let autoplayThrottle = null;
+            const observer = new MutationObserver(() => {
+                if (autoplayThrottle) return;
+                autoplayThrottle = setTimeout(() => {
+                    autoplayThrottle = null;
+                    pauseVideos();
+                }, 500);
+            });
             observer.observe(document.body, { childList: true, subtree: true });
             setTimeout(() => observer.disconnect(), 60000);
 
@@ -1154,12 +1193,21 @@
         const beforeCursor = text.substring(0, cursorPos);
         const lastWord = beforeCursor.split(/\s/).pop();
 
-        if (lastWord.length >= 2 && Object.keys(emoteMap).length > 0) {
+        if (lastWord.length >= 2 && emoteNamesSorted.length > 0) {
             const lower = lastWord.toLowerCase();
-            const matches = Object.entries(emoteMap)
-                .filter(([name]) => name.toLowerCase().startsWith(lower))
-                .sort((a, b) => a[0].length - b[0].length)
-                .slice(0, 10);
+            // Binary search for first entry starting with the prefix
+            let lo = 0, hi = emoteNamesSorted.length;
+            while (lo < hi) {
+                const mid = (lo + hi) >>> 1;
+                if (emoteNamesSorted[mid].lower < lower) lo = mid + 1; else hi = mid;
+            }
+            const matches = [];
+            for (let i = lo; i < emoteNamesSorted.length && matches.length < 10; i++) {
+                const entry = emoteNamesSorted[i];
+                if (!entry.lower.startsWith(lower)) break;
+                const emote = emoteMap.get(entry.name);
+                if (emote) matches.push([entry.name, emote]);
+            }
 
             if (matches.length > 0) {
                 showCompletionDropdown(input, matches, lastWord);
@@ -1351,7 +1399,7 @@
 
         function renderGrid(filter, providerFilter) {
             grid.innerHTML = "";
-            const entries = Object.entries(emoteMap);
+            const entries = [...emoteMap.entries()];
             let filtered = entries;
             if (providerFilter && providerFilter !== "All") {
                 const pMap = { "BTTV": "bttv", "FFZ": "ffz", "7TV": "7tv" };
@@ -1485,10 +1533,14 @@
     // 11. Enhanced User Cards
     // ---------------------------------------------------------------------------
 
+    let userCardObserver = null;
+
     function initEnhancedUserCards() {
         if (settings.enhancedUserCards === false) return;
+        // Prevent stacking observers on repeated channel changes
+        if (userCardObserver) return;
 
-        const observer = new MutationObserver((mutations) => {
+        userCardObserver = new MutationObserver((mutations) => {
             for (const m of mutations) {
                 for (const node of m.addedNodes) {
                     if (node.nodeType !== Node.ELEMENT_NODE) continue;
@@ -1501,7 +1553,16 @@
                 }
             }
         });
-        observer.observe(document.body, { childList: true, subtree: true });
+        // Scope to the chat container instead of document.body when possible
+        const chatRoot = document.querySelector(".stream-chat") || document.body;
+        userCardObserver.observe(chatRoot, { childList: true, subtree: true });
+    }
+
+    function stopEnhancedUserCards() {
+        if (userCardObserver) {
+            userCardObserver.disconnect();
+            userCardObserver = null;
+        }
     }
 
     async function enhanceUserCard(card) {
@@ -1657,10 +1718,11 @@
 
         entry.push(now);
 
-        // Remove timestamps outside the window
-        while (entry.length > 0 && entry[0] < now - windowMs) {
-            entry.shift();
-        }
+        // Remove timestamps outside the window (binary search for cutoff)
+        const cutoff = now - windowMs;
+        let lo = 0;
+        while (lo < entry.length && entry[lo] < cutoff) lo++;
+        if (lo > 0) entry.splice(0, lo);
 
         // --- Combo counter tracking ---
         const displayText = msgBody.textContent.trim().replace(/\s+/g, " ");
@@ -1734,10 +1796,11 @@
         ).join("");
     }
 
+    const HTML_ESCAPE_MAP = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
+    const HTML_ESCAPE_RE = /[&<>"']/g;
+
     function escapeHtml(str) {
-        const div = document.createElement("div");
-        div.textContent = str;
-        return div.innerHTML;
+        return str.replace(HTML_ESCAPE_RE, (ch) => HTML_ESCAPE_MAP[ch]);
     }
 
     // ---------------------------------------------------------------------------
@@ -1786,8 +1849,10 @@
         }
     }
 
+    const YOUTUBE_URL_RE = /(?:youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts\/)/;
+
     function isYoutubeUrl(url) {
-        return /(?:youtube\.com\/watch|youtu\.be\/|youtube\.com\/shorts\/)/.test(url);
+        return YOUTUBE_URL_RE.test(url);
     }
 
     async function showYoutubePreview(e, url) {
@@ -1954,11 +2019,25 @@
     function startPlayerControlsObserver() {
         stopPlayerControlsObserver();
 
-        // Use a periodic timer to re-inject buttons if Twitch re-renders the player.
-        // Avoids a MutationObserver on document.body which fires on every DOM change.
-        if (!playerButtonCheckTimer) {
+        // Observe the player container for re-renders (scoped, not document.body)
+        const player = document.querySelector("[data-a-target='video-player'], .video-player");
+        if (player) {
+            playerControlsObserver = new MutationObserver(() => {
+                ensurePlayerButtons();
+            });
+            playerControlsObserver.observe(player, { childList: true, subtree: true });
+        }
+        // Fallback: if player not found yet, use a short polling timer that stops once observer is set
+        if (!playerControlsObserver && !playerButtonCheckTimer) {
             playerButtonCheckTimer = setInterval(() => {
                 ensurePlayerButtons();
+                const p = document.querySelector("[data-a-target='video-player'], .video-player");
+                if (p) {
+                    clearInterval(playerButtonCheckTimer);
+                    playerButtonCheckTimer = null;
+                    playerControlsObserver = new MutationObserver(() => ensurePlayerButtons());
+                    playerControlsObserver.observe(p, { childList: true, subtree: true });
+                }
             }, 3000);
         }
     }
@@ -2259,8 +2338,14 @@
         if (clipLabelObserver) return;
         if (!location.pathname.includes("/clip/")) return;
 
+        // Debounce to avoid running on every single DOM mutation
+        let clipLabelDebounce = null;
         clipLabelObserver = new MutationObserver(() => {
-            shortenClipDownloadLabelsNow();
+            if (clipLabelDebounce) return;
+            clipLabelDebounce = setTimeout(() => {
+                clipLabelDebounce = null;
+                shortenClipDownloadLabelsNow();
+            }, 200);
         });
         clipLabelObserver.observe(document.body, { childList: true, subtree: true });
         // Also run immediately in case the dropdown is already open
@@ -2275,17 +2360,27 @@
         }
     }
 
+    const VERSION_RE = /versi[oó]n/i;
+    const VERSION_REPLACE_RE = /\s*versi[oó]n\s*/gi;
+
     function shortenClipDownloadLabelsNow() {
-        const versionRe = /versi[oó]n/i;
-        // Scan all buttons and anchors for "versión"/"version" text
-        const elements = document.querySelectorAll("button, a, div[role='menuitem'], [data-a-target]");
-        for (const el of elements) {
-            if (!versionRe.test(el.textContent)) continue;
-            const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
-            let node;
-            while ((node = walker.nextNode())) {
-                if (versionRe.test(node.nodeValue)) {
-                    node.nodeValue = node.nodeValue.replace(/\s*versi[oó]n\s*/gi, " ").trim();
+        // Scope to dropdown/popover/modal containers — not the entire page
+        const roots = document.querySelectorAll(
+            "[data-a-target='dropdown-menu'], [role='dialog'], [role='menu'], " +
+            "[class*='popover'], [class*='dropdown'], [class*='modal']"
+        );
+        const scanRoot = roots.length > 0 ? roots : [document.querySelector(".clip-info, main") || document.body];
+        for (const root of scanRoot) {
+            if (!root) continue;
+            const elements = root.querySelectorAll("button, a, div[role='menuitem'], [data-a-target]");
+            for (const el of elements) {
+                if (!VERSION_RE.test(el.textContent)) continue;
+                const walker = document.createTreeWalker(el, NodeFilter.SHOW_TEXT);
+                let node;
+                while ((node = walker.nextNode())) {
+                    if (VERSION_RE.test(node.nodeValue)) {
+                        node.nodeValue = node.nodeValue.replace(VERSION_REPLACE_RE, " ").trim();
+                    }
                 }
             }
         }
@@ -2320,12 +2415,17 @@
         }
     }
 
+    const IMAGE_EXT_RE = /\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i;
+    const IMGUR_RE = /imgur\.com\/[a-zA-Z0-9]+$/i;
+    const I_IMGUR_RE = /i\.imgur\.com\//i;
+    const TWIMG_RE = /pbs\.twimg\.com\//i;
+
     function isImageUrl(url) {
-        if (/\.(png|jpe?g|gif|webp|bmp|svg)(\?.*)?$/i.test(url)) return true;
+        if (IMAGE_EXT_RE.test(url)) return true;
         // Common image hosts
-        if (/imgur\.com\/[a-zA-Z0-9]+$/i.test(url)) return true;
-        if (/i\.imgur\.com\//i.test(url)) return true;
-        if (/pbs\.twimg\.com\//i.test(url)) return true;
+        if (IMGUR_RE.test(url)) return true;
+        if (I_IMGUR_RE.test(url)) return true;
+        if (TWIMG_RE.test(url)) return true;
         return false;
     }
 
@@ -2336,6 +2436,13 @@
     let watchTimeInterval = null;
     let watchTimeEl = null;
     let sessionWatchTime = 0;
+    let cachedVideoEl = null;
+
+    function getVideoElement() {
+        if (cachedVideoEl && cachedVideoEl.isConnected) return cachedVideoEl;
+        cachedVideoEl = document.querySelector("video");
+        return cachedVideoEl;
+    }
 
     function initWatchTimeTracker() {
         if (!settings.watchTimeTracker) return;
@@ -2345,7 +2452,7 @@
         sessionWatchTime = 0;
 
         watchTimeInterval = setInterval(() => {
-            const video = document.querySelector("video");
+            const video = getVideoElement();
             if (video && !video.paused) {
                 sessionWatchTime++;
                 updateWatchTimeDisplay();
@@ -2536,7 +2643,7 @@
         if (vodClockInterval) return;
 
         function updateVodClock() {
-            const video = document.querySelector("video");
+            const video = getVideoElement();
             if (!video || !vodStartTime) return;
 
             const currentWallTime = new Date(vodStartTime.getTime() + (video.currentTime * 1000));
@@ -2756,11 +2863,16 @@
      * Watch for our button being removed and re-inject if needed.
      */
     function observeSettingsButtonRemoval() {
+        let settingsBtnDebounce = null;
         const observer = new MutationObserver(() => {
-            if (!document.querySelector(".tp-settings-btn")) {
-                observer.disconnect();
-                injectSettingsButton();
-            }
+            if (settingsBtnDebounce) return;
+            settingsBtnDebounce = setTimeout(() => {
+                settingsBtnDebounce = null;
+                if (!document.querySelector(".tp-settings-btn")) {
+                    observer.disconnect();
+                    injectSettingsButton();
+                }
+            }, 300);
         });
 
         const chatRoot = document.querySelector(".stream-chat");
@@ -3905,6 +4017,7 @@
         stopVodClock();
         stopClipLabelObserver();
         stopPlayerControlsObserver();
+        stopEnhancedUserCards();
 
         // Try to get channel ID from the page-world script
         const result = await requestChannelId();
@@ -4098,17 +4211,18 @@
             // Remove old emotes
             if (removedEmoteNames?.length > 0) {
                 for (const name of removedEmoteNames) {
-                    delete emoteMap[name];
+                    emoteMap.delete(name);
                 }
             }
 
             // Add new emotes
             if (addedEmotes?.length > 0) {
                 for (const emote of addedEmotes) {
-                    emoteMap[emote.name] = emote;
+                    emoteMap.set(emote.name, emote);
                 }
             }
 
+            rebuildEmoteIndex();
             console.log(`[Twitch Plus] Emote map updated live: +${addedEmotes?.length || 0} -${removedEmoteNames?.length || 0}`);
         }
     });
@@ -4209,14 +4323,9 @@
             await loadGlobalEmotesOnly();
             setTimeout(() => initNonChannelPage(), 1500);
         } else {
-            const excluded = new Set([
-                "directory", "downloads", "jobs", "turbo", "settings",
-                "subscriptions", "inventory", "wallet", "friends",
-                "moderator", "search", "following", "videos", "",
-            ]);
             const parts = path.split("/").filter(Boolean);
             const initialChannel = pendingChannel
-                || (parts.length > 0 && !excluded.has(parts[0].toLowerCase()) ? parts[0].toLowerCase() : null);
+                || (parts.length > 0 && !EXCLUDED_PATHS.has(parts[0].toLowerCase()) ? parts[0].toLowerCase() : null);
             pendingChannel = null;
 
             if (initialChannel) {

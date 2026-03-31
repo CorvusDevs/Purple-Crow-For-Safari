@@ -131,6 +131,12 @@
         );
     }
 
+    const EXCLUDED_PATHS = new Set([
+        "directory", "downloads", "jobs", "turbo", "settings",
+        "subscriptions", "inventory", "wallet", "friends",
+        "moderator", "search", "following", "videos", "",
+    ]);
+
     function parseChannelFromPath(pathname) {
         // Twitch channel URLs: /channelname or /channelname/videos etc.
         // VOD/clip pages are NOT channel pages even though they contain a username:
@@ -138,16 +144,10 @@
         //   /videos/123456           → VOD page
         if (pathname.includes("/clip/") || pathname.includes("/videos/")) return null;
 
-        // Exclude known non-channel paths
-        const excluded = new Set([
-            "directory", "downloads", "jobs", "turbo", "settings",
-            "subscriptions", "inventory", "wallet", "friends",
-            "moderator", "search", "following", "videos", "",
-        ]);
         const parts = pathname.split("/").filter(Boolean);
         if (parts.length === 0) return null;
         const first = parts[0].toLowerCase();
-        if (excluded.has(first)) return null;
+        if (EXCLUDED_PATHS.has(first)) return null;
         return first;
     }
 

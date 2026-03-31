@@ -80,6 +80,20 @@ const DEFAULT_SETTINGS = {
 
 let settings = { ...DEFAULT_SETTINGS };
 
+/**
+ * Evict oldest entries from a cache Map when it exceeds maxSize.
+ * Entries must have a `timestamp` property.
+ */
+function pruneCache(cache, maxSize) {
+    if (cache.size <= maxSize) return;
+    // Find and delete oldest entries
+    const entries = [...cache.entries()].sort((a, b) => a[1].timestamp - b[1].timestamp);
+    const toRemove = entries.length - maxSize;
+    for (let i = 0; i < toRemove; i++) {
+        cache.delete(entries[i][0]);
+    }
+}
+
 // Cache for emote data: channelId -> { bttv, ffz, sevenTv, timestamp }
 const emoteCache = new Map();
 const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
@@ -485,27 +499,24 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
 const pronounsCache = new Map();
 const PRONOUNS_TTL = 30 * 60 * 1000; // 30 minutes
 let pronounMap = null; // id -> display string
-let pronounMapFetching = false;
+let pronounMapPromise = null;
 
 async function fetchPronounMap() {
     if (pronounMap) return pronounMap;
-    if (pronounMapFetching) {
-        return new Promise((resolve) => {
-            const check = setInterval(() => {
-                if (pronounMap) { clearInterval(check); resolve(pronounMap); }
-            }, 200);
-        });
-    }
-    pronounMapFetching = true;
-    const data = await safeFetch("https://api.pronouns.alejo.io/v1/pronouns");
-    pronounMap = {};
-    if (Array.isArray(data)) {
-        for (const p of data) {
-            pronounMap[p.name] = p.display;
+    if (pronounMapPromise) return pronounMapPromise;
+
+    pronounMapPromise = (async () => {
+        const data = await safeFetch("https://api.pronouns.alejo.io/v1/pronouns");
+        pronounMap = {};
+        if (Array.isArray(data)) {
+            for (const p of data) {
+                pronounMap[p.name] = p.display;
+            }
         }
-    }
-    pronounMapFetching = false;
-    return pronounMap;
+        pronounMapPromise = null;
+        return pronounMap;
+    })();
+    return pronounMapPromise;
 }
 
 async function fetchPronouns(login) {
@@ -526,6 +537,7 @@ async function fetchPronouns(login) {
         const entry = data[0];
         const display = map[entry.pronoun_id] || entry.pronoun_id || null;
         pronounsCache.set(login, { data: display, timestamp: Date.now() });
+        pruneCache(pronounsCache, 500);
         return { pronouns: display };
     } catch (e) {
         return { pronouns: null };
@@ -600,6 +612,7 @@ async function fetchYoutubePreview(url) {
             thumbnail: data.thumbnail_url || "",
         };
         youtubeCache.set(url, { data: preview, timestamp: Date.now() });
+        pruneCache(youtubeCache, 200);
         return { preview };
     } catch (e) {
         return { preview: null };
@@ -833,6 +846,7 @@ async function fetchSevenTvCosmetics(twitchUserId) {
         }
 
         cosmeticsCache.set(twitchUserId, { data: cosmetics, timestamp: Date.now() });
+        pruneCache(cosmeticsCache, 300);
         return { cosmetics };
     } catch (e) {
         console.warn("[Twitch Plus] Failed to fetch 7TV cosmetics:", e);

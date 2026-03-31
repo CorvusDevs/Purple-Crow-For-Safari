@@ -1,5 +1,26 @@
 # Changelog
 
+## v3.1.2 — Performance Optimizations
+
+- Debounced and scoped `clipLabelObserver` — no longer fires `querySelectorAll` on every DOM mutation
+- Fixed `enhancedUserCards` observer stacking — now disconnects on channel change, scoped to chat container
+- Throttled autoplay prevention observer callback
+- Replaced `emoteMap` plain object with `Map` — O(1) `.size` check instead of `Object.keys().length` per message
+- Cached theme detection via `MutationObserver` on `<html>` class — no more DOM queries per chat message
+- Pre-compiled hot-path regex literals as module-level constants (`isYoutubeUrl`, `isImageUrl`, `escapeHtml`, clip labels)
+- Added cache size limits (LRU eviction) to `pronounsCache`, `youtubeCache`, and `cosmeticsCache` in background.js
+- Replaced `Array.shift()` loop in spam buffer with `splice()` for O(1) pruning
+- Replaced 3-second player button polling with scoped `MutationObserver` on the video player
+- Auto-claim interval slows from 5s to 30s once observer is attached to the points summary
+- Debounced settings button removal observer
+- Built pre-sorted lowercase emote name index with binary search for autocomplete — eliminates `O(n)` scan per keystroke
+- Cached `<video>` element reference for watch time and VOD clock intervals
+- Extracted `EXCLUDED_PATHS` Set as module-level constant (content.js + injected.js)
+- Replaced DOM-based `escapeHtml` with pure string replacement
+- Replaced polling-based `fetchPronounMap` deduplication with Promise-based dedup
+
+---
+
 ## v3.1.1 — Bug Fixes & Cleanup
 
 - Fixed Move Chat to Left — rewrote using pure CSS `order` approach (matching BTTV/FFZ)
