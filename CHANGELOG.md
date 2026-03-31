@@ -1,5 +1,22 @@
 # Changelog
 
+## v3.1.3 — New Logo, Bug Fixes & Emote Improvements
+
+### New Logo
+- Updated app icon to purple geometric low-poly raven across all targets (AppIcon, LargeIcon, extension icons, in-app icon, toolbar SVG, settings button SVG, popup)
+
+### Bug Fixes
+- Fixed split chat colors race condition — old messages no longer get multicolored backgrounds on stream load
+- Fixed watch time tracker disappearing on page reload — added broader fallback selectors and proper retry logic
+- Fixed emote menu click-to-insert — rewrote for Twitch's Slate.js contenteditable editor (was silently failing on textarea that no longer exists)
+- Improved emote rendering fallback — now processes direct text nodes and child spans when `.text-fragment` wrapper is absent (matches BTTV's approach)
+
+### Improvements
+- Updated version display in popup and settings panel to v3.1.2
+- Added per-provider emote count logging for easier debugging
+
+---
+
 ## v3.1.2 — Performance Optimizations
 
 - Debounced and scoped `clipLabelObserver` — no longer fires `querySelectorAll` on every DOM mutation

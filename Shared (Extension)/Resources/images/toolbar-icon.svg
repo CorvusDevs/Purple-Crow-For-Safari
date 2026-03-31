@@ -1,26 +1,25 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 16 16">
-  <!-- Simplified crow silhouette for toolbar -->
-  <!-- Tail -->
-  <path d="M2.2 10.5Q1.5 11.2 1.5 12.5Q2 12 2.5 11.8Q2.2 12.8 2.3 13.5Q2.8 12.8 3.2 12.3L4 10.8Z" fill="context-fill" opacity="0.85"/>
+  <!-- Raven silhouette matching app icon pose (facing right, perched) -->
+  <!-- Tail feathers -->
+  <path d="M1.8 10.8Q1 11.5 0.8 12.8Q1.5 12 2.2 11.8L3 10.5Z" fill="context-fill" opacity="0.85"/>
+  <path d="M2.3 11.2Q1.8 12.2 1.5 13.3Q2.3 12.5 2.8 12L3.3 10.8Z" fill="context-fill" opacity="0.8"/>
   <!-- Body -->
-  <ellipse cx="7" cy="9" rx="4.2" ry="3" fill="context-fill"/>
+  <path d="M3 10.5Q2.5 9 3.5 7.5L5.5 6L7.5 5.8L9.5 6.5L10.5 7.5Q10.8 9 10 10.5L8 11.5L5.5 12L3 10.5Z" fill="context-fill"/>
   <!-- Wing detail -->
-  <path d="M5.2 8Q4.3 7 4.1 8.5Q4 9.5 4.8 10.5Q5.6 11.2 7 11Q6.1 10.5 5.6 9.7Q5.3 9 5.2 8Z" fill="context-fill" opacity="0.7"/>
+  <path d="M3.8 8.5Q3.2 7.5 3.8 6.8L5.5 6.2L7 6.5L8 7.5L7.5 9L5.5 10L3.8 8.5Z" fill="context-fill" opacity="0.7"/>
   <!-- Head -->
-  <circle cx="10.2" cy="5.8" r="2.5" fill="context-fill"/>
+  <circle cx="10.5" cy="5" r="2.4" fill="context-fill"/>
   <!-- Eye -->
-  <circle cx="11" cy="5.5" r="0.9" fill="context-stroke"/>
-  <circle cx="11.2" cy="5.3" r="0.35" fill="context-fill"/>
+  <circle cx="11.3" cy="4.7" r="0.8" fill="context-stroke"/>
+  <circle cx="11.5" cy="4.55" r="0.3" fill="context-fill"/>
   <!-- Beak -->
-  <path d="M12.5 5.8L14.2 6L12.7 6.7Z" fill="context-fill" opacity="0.85"/>
-  <!-- Crest -->
-  <path d="M9 4.2Q8.8 3 9.5 2.3" fill="none" stroke="context-fill" stroke-width="0.6" stroke-linecap="round"/>
-  <path d="M9.7 3.9Q9.8 2.6 10.6 2" fill="none" stroke="context-fill" stroke-width="0.6" stroke-linecap="round"/>
-  <path d="M10.3 3.8Q10.8 2.7 11.5 2.3" fill="none" stroke="context-fill" stroke-width="0.55" stroke-linecap="round"/>
+  <path d="M12.7 5.2L14.8 5.5L12.8 6.2Z" fill="context-fill"/>
+  <!-- Crown/crest feathers -->
+  <path d="M9.2 3.5Q8.8 2.2 9.5 1.5" fill="none" stroke="context-fill" stroke-width="0.55" stroke-linecap="round"/>
+  <path d="M10 3.2Q10 2 10.7 1.3" fill="none" stroke="context-fill" stroke-width="0.55" stroke-linecap="round"/>
+  <path d="M10.8 3.3Q11.2 2.3 11.7 1.8" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round"/>
   <!-- Feet -->
-  <path d="M6 11.8L5.7 13L5.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M5.7 13L6.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round"/>
-  <path d="M8 11.8L7.7 13L7.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M7.7 13L8.1 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round"/>
+  <path d="M6.5 11.8L6.2 13.2L5.5 13.8M6.2 13.2L6.6 13.8" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M8.5 11.5L8.2 13L7.5 13.6M8.2 13L8.6 13.6" fill="none" stroke="context-fill" stroke-width="0.5" stroke-linecap="round" stroke-linejoin="round"/>
 </svg>

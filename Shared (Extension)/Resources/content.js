@@ -269,8 +269,11 @@
                 emoteMap = new Map(Object.entries(response.emoteMap));
                 rebuildEmoteIndex();
                 settings = response.settings || {};
+                const bttvCount = [...emoteMap.values()].filter(e => e.source === "bttv").length;
+                const ffzCount = [...emoteMap.values()].filter(e => e.source === "ffz").length;
+                const stvCount = [...emoteMap.values()].filter(e => e.source === "7tv").length;
                 console.log(
-                    `[Twitch Plus] Emote map loaded: ${emoteMap.size} emotes`
+                    `[Twitch Plus] Emote map loaded: ${emoteMap.size} emotes (BTTV=${bttvCount}, FFZ=${ffzCount}, 7TV=${stvCount})`
                 );
 
                 // Subscribe to 7TV EventAPI for live emote updates
@@ -663,19 +666,29 @@
             return;
         }
 
-        // Fallback: if no .text-fragment found, look for the message body container
-        // and process direct text-containing spans (Twitch may change markup)
+        // Fallback 1: process childNodes of the message text container directly.
+        // BTTV uses this approach — Twitch may not always use .text-fragment spans.
         const msgBody = messageEl.querySelector(
+            "span[data-a-target='chat-message-text'], " +
             "[data-a-target='chat-message-text'], " +
             ".chat-line__message-body, " +
             "[class*='message-container']"
         );
         if (msgBody) {
-            // Process direct child spans that contain text (but not badges, icons, etc.)
-            const spans = msgBody.querySelectorAll("span:not([class*='badge']):not([class*='icon'])");
-            for (const span of spans) {
-                if (span.children.length === 0 && span.textContent?.trim()) {
-                    replaceEmotesInTextNode(span);
+            // Walk childNodes: process text nodes and text-containing spans
+            const children = [...msgBody.childNodes];
+            for (const child of children) {
+                if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
+                    // Wrap in a span so replaceEmotesInTextNode can replace it
+                    const wrapper = document.createElement("span");
+                    wrapper.textContent = child.textContent;
+                    child.replaceWith(wrapper);
+                    replaceEmotesInTextNode(wrapper);
+                } else if (child.nodeType === Node.ELEMENT_NODE) {
+                    // Process spans that contain only text (no nested elements like badges)
+                    if (child.children.length === 0 && child.textContent?.trim()) {
+                        replaceEmotesInTextNode(child);
+                    }
                 }
             }
         }
@@ -1485,23 +1498,73 @@
     }
 
     function insertEmoteInChat(emoteName) {
-        const input = document.querySelector(
-            "[data-a-target=\"chat-input\"] textarea, " +
-            "[data-a-target=\"chat-input\"] [contenteditable]"
+        // Twitch uses Slate.js with a contenteditable div, not a textarea.
+        // We need to find the Slate editor and insert via execCommand or InputEvent.
+        const editor = document.querySelector(
+            "[data-slate-editor='true'], " +
+            "[data-a-target='chat-input'] [role='textbox'], " +
+            "[data-a-target='chat-input'] [contenteditable='true']"
         );
-        if (!input) return;
-        input.focus();
-        const text = input.value ?? input.textContent ?? "";
-        const newText = text ? text + " " + emoteName + " " : emoteName + " ";
-        const nativeSetter = Object.getOwnPropertyDescriptor(
-            window.HTMLTextAreaElement.prototype, "value"
-        )?.set;
-        if (nativeSetter && input.value !== undefined) {
-            nativeSetter.call(input, newText);
-        } else {
-            input.value = newText;
+        if (!editor) {
+            // Fallback: try legacy textarea selector
+            const textarea = document.querySelector("[data-a-target='chat-input'] textarea");
+            if (textarea) {
+                textarea.focus();
+                const nativeSetter = Object.getOwnPropertyDescriptor(
+                    window.HTMLTextAreaElement.prototype, "value"
+                )?.set;
+                const text = textarea.value || "";
+                const insert = (text && !text.endsWith(" ") ? " " : "") + emoteName + " ";
+                if (nativeSetter) {
+                    nativeSetter.call(textarea, text + insert);
+                } else {
+                    textarea.value = text + insert;
+                }
+                textarea.dispatchEvent(new Event("input", { bubbles: true }));
+                return;
+            }
+            console.warn("[Twitch Plus] Could not find chat input element for emote insertion");
+            return;
         }
-        input.dispatchEvent(new Event("input", { bubbles: true }));
+
+        editor.focus();
+
+        // Move caret to end of content
+        const selection = window.getSelection();
+        if (selection && editor.lastChild) {
+            const range = document.createRange();
+            range.selectNodeContents(editor);
+            range.collapse(false); // collapse to end
+            selection.removeAllRanges();
+            selection.addRange(range);
+        }
+
+        // Check if there's existing text and add space if needed
+        const existingText = editor.textContent || "";
+        const prefix = existingText && !existingText.endsWith(" ") ? " " : "";
+        const textToInsert = prefix + emoteName + " ";
+
+        // Use execCommand('insertText') — Slate.js listens for beforeinput events
+        // which execCommand triggers, making it recognize the insertion.
+        const inserted = document.execCommand("insertText", false, textToInsert);
+        if (!inserted) {
+            // Fallback: dispatch InputEvent directly
+            const inputEvent = new InputEvent("beforeinput", {
+                inputType: "insertText",
+                data: textToInsert,
+                bubbles: true,
+                cancelable: true,
+                composed: true,
+            });
+            editor.dispatchEvent(inputEvent);
+
+            // Also dispatch input event for any additional listeners
+            editor.dispatchEvent(new InputEvent("input", {
+                inputType: "insertText",
+                data: textToInsert,
+                bubbles: true,
+            }));
+        }
     }
 
     // ---------------------------------------------------------------------------
@@ -2487,12 +2550,25 @@
             if (container) {
                 container.appendChild(watchTimeEl);
             } else {
-                // Fallback: try the stream info area or chat buttons
-                const fallback = document.querySelector("#live-channel-stream-information, .channel-info-content, .chat-input__buttons-container");
+                // Broader fallback selectors — Twitch's stream info layout may vary
+                const fallback = document.querySelector(
+                    "[data-a-target='stream-game-link'], " +
+                    ".metadata-layout__support, " +
+                    "#live-channel-stream-information, " +
+                    ".channel-info-content, " +
+                    ".chat-input__buttons-container"
+                );
                 if (fallback) {
-                    fallback.appendChild(watchTimeEl);
+                    const parent = fallback.closest("[class*='Layout']") || fallback.parentElement;
+                    if (parent) {
+                        parent.appendChild(watchTimeEl);
+                    } else {
+                        fallback.appendChild(watchTimeEl);
+                    }
                 } else {
-                    return; // will retry next tick
+                    // Not ready yet — null out so next tick retries
+                    watchTimeEl = null;
+                    return;
                 }
             }
         }
@@ -2836,19 +2912,28 @@
         btn.setAttribute("aria-label", "Twitch Plus");
         btn.title = "Twitch Plus Settings";
         btn.innerHTML = `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <ellipse cx="8.5" cy="11.5" rx="5.5" ry="3.8" fill="#9147ff"/>
-            <circle cx="13" cy="7.2" r="3.2" fill="#9147ff"/>
-            <ellipse cx="14.2" cy="6.9" rx="1" ry="1.1" fill="#fff"/>
-            <ellipse cx="14.4" cy="6.9" rx="0.55" ry="0.65" fill="#18181b"/>
-            <path d="M15.8 7.2l2.2.1-1.6.9z" fill="#FFB833"/>
-            <path d="M11 5.3Q10.7 3.8 11.5 3" fill="none" stroke="#7B2FBE" stroke-width="0.8" stroke-linecap="round"/>
-            <path d="M12 5Q12.2 3.5 13.1 2.8" fill="none" stroke="#7B2FBE" stroke-width="0.8" stroke-linecap="round"/>
-            <path d="M13 4.8Q13.6 3.5 14.4 3" fill="none" stroke="#7B2FBE" stroke-width="0.7" stroke-linecap="round"/>
-            <path d="M3 10.5Q2 11.5 2 13Q2.5 12.3 3 12Q2.6 13.2 2.8 14Q3.3 13.2 3.8 12.7L4.8 11Z" fill="#7B2FBE"/>
-            <path d="M7 15l-.3 1.7-.8.8" fill="none" stroke="#FFB833" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M6.7 16.7l.5.7" fill="none" stroke="#FFB833" stroke-width="0.7" stroke-linecap="round"/>
-            <path d="M10 15l-.3 1.7-.8.8" fill="none" stroke="#FFB833" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M9.7 16.7l.5.7" fill="none" stroke="#FFB833" stroke-width="0.7" stroke-linecap="round"/>
+            <!-- Low-poly raven matching app icon -->
+            <!-- Body -->
+            <path d="M4 13.5Q3.2 11.5 4.5 9.5L7 8L9.5 7.5L12 8.5L13.5 10Q13.8 12 12.5 13.5L10 14.5L7 15Z" fill="#9147ff"/>
+            <!-- Wing facets -->
+            <path d="M5 11L7 8.5L9 9L10 10.5L9 12.5L6.5 13.5Z" fill="#7B2FBE"/>
+            <path d="M7 8.5L9.5 7.8L10.5 9L9 9Z" fill="#A366FF"/>
+            <!-- Head -->
+            <circle cx="13.5" cy="6.5" r="3" fill="#9147ff"/>
+            <!-- Head facets -->
+            <path d="M12 6L13.5 4L15.5 5.5L14.5 7.5L12.5 7.5Z" fill="#A366FF" opacity="0.6"/>
+            <!-- Eye -->
+            <ellipse cx="14.5" cy="6.2" rx="1" ry="1.1" fill="#fff"/>
+            <ellipse cx="14.7" cy="6.1" rx="0.5" ry="0.6" fill="#18181b"/>
+            <circle cx="14.9" cy="5.9" r="0.2" fill="#fff"/>
+            <!-- Beak -->
+            <path d="M16.2 6.5L18.5 6.8L16.3 7.8Z" fill="#7B2FBE"/>
+            <!-- Tail -->
+            <path d="M3 13Q1.8 14 1.5 15.5Q2.5 14.5 3.2 14.2L4 13Z" fill="#7B2FBE" opacity="0.85"/>
+            <path d="M3.5 13.5Q2.5 15 2 16Q3 15 3.5 14.5L4.2 13.5Z" fill="#5C1F99" opacity="0.8"/>
+            <!-- Feet -->
+            <path d="M7.5 14.8L7 16.5L6.2 17.2M7 16.5L7.5 17.2" fill="none" stroke="#7B2FBE" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M10 14.5L9.5 16.2L8.7 16.9M9.5 16.2L10 16.9" fill="none" stroke="#7B2FBE" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
         </svg>`;
 
         btn.addEventListener("click", (e) => {
@@ -3225,7 +3310,7 @@
         // ── Footer ──
         const footer = document.createElement("div");
         footer.className = "tp-panel-footer";
-        footer.innerHTML = `<span>Twitch Plus v3.1.0</span>`;
+        footer.innerHTML = `<span>Twitch Plus v3.1.3</span>`;
         panel.appendChild(footer);
 
         // Apply disabled state to non-master toggles if extension is off
@@ -4039,9 +4124,10 @@
             await waitForElement(CHAT_CONTAINER_SELECTORS.join(", "), 15000);
             startChatObserver();
 
-            // Apply settings that depend on the chat container being ready
-            applySettingChange("splitChat", settings.splitChat !== false);
+            // Apply settings that depend on the chat container being ready.
+            // Order matters: alternatingUsers first, then splitChat last so it wins visually.
             applySettingChange("alternatingUsers", settings.alternatingUsers !== false);
+            applySettingChange("splitChat", settings.splitChat !== false);
             if (settings.lurkMode) applySettingChange("lurkMode", true);
         } catch (e) {
             console.warn("[Twitch Plus] Chat container not found after channel change.");
@@ -4185,9 +4271,9 @@
         if (request.action === "settingsUpdated") {
             settings = request.settings || settings;
 
-            // Apply all live changes
-            applySettingChange("splitChat", settings.splitChat !== false);
+            // Apply all live changes (alternatingUsers first, splitChat last so it wins)
             applySettingChange("alternatingUsers", settings.alternatingUsers !== false);
+            applySettingChange("splitChat", settings.splitChat !== false);
             applySettingChange("autoClaimPoints", settings.autoClaimPoints !== false);
             applySettingChange("lurkMode", settings.lurkMode);
             applySettingChange("emoteTabCompletion", settings.emoteTabCompletion);
