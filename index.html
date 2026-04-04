@@ -107,12 +107,8 @@
 
         .nav-links a:hover { color: var(--text); }
 
-        /* ── Language Picker ── */
+        /* ── Language Picker (inside nav) ── */
         .lang-picker {
-            position: fixed;
-            top: 16px;
-            right: 16px;
-            z-index: 200;
             background: var(--surface);
             border: 1px solid var(--border);
             border-radius: 8px;
@@ -126,6 +122,8 @@
             background-repeat: no-repeat;
             background-position: right 10px center;
             padding-right: 28px;
+            margin-left: 16px;
+            flex-shrink: 0;
         }
 
         /* ── Hero ── */
@@ -460,30 +458,30 @@
 </head>
 <body>
 
-    <!-- Language Picker -->
-    <select class="lang-picker" id="langPicker" onchange="setLanguage(this.value)">
-        <option value="en">English</option>
-        <option value="es">Español</option>
-        <option value="fr">Français</option>
-        <option value="de">Deutsch</option>
-        <option value="pt">Português</option>
-        <option value="it">Italiano</option>
-        <option value="ja">日本語</option>
-        <option value="ko">한국어</option>
-        <option value="ru">Русский</option>
-    </select>
-
     <!-- Nav -->
     <nav>
         <a href="https://corvusdevs.github.io" class="nav-brand">
             <img src="https://avatars.githubusercontent.com/u/25494090?v=4" alt="CorvusDevs">
             Corvus<span>Devs</span>
         </a>
-        <ul class="nav-links">
-            <li><a href="#features" data-i18n="nav_features">Features</a></li>
-            <li><a href="#how" data-i18n="nav_how">How it works</a></li>
-            <li><a href="mailto:corvusdevs@outlook.com" data-i18n="nav_contact">Contact</a></li>
-        </ul>
+        <div style="display:flex;align-items:center;">
+            <ul class="nav-links">
+                <li><a href="#features" data-i18n="nav_features">Features</a></li>
+                <li><a href="#how" data-i18n="nav_how">How it works</a></li>
+                <li><a href="mailto:corvusdevs@outlook.com" data-i18n="nav_contact">Contact</a></li>
+            </ul>
+            <select class="lang-picker" id="langPicker" onchange="setLanguage(this.value)">
+                <option value="en">🇬🇧 English</option>
+                <option value="es">🇪🇸 Español</option>
+                <option value="fr">🇫🇷 Français</option>
+                <option value="de">🇩🇪 Deutsch</option>
+                <option value="pt">🇧🇷 Português</option>
+                <option value="it">🇮🇹 Italiano</option>
+                <option value="ja">🇯🇵 日本語</option>
+                <option value="ko">🇰🇷 한국어</option>
+                <option value="ru">🇷🇺 Русский</option>
+            </select>
+        </div>
     </nav>
 
     <!-- Hero -->
