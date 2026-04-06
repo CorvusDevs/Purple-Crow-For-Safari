@@ -84,8 +84,9 @@
     padding-left: 4px;
 }
 
-/* Consistent chat message padding for clean alternating backgrounds */
-.chat-line__message {
+/* Consistent chat message padding when split chat (alternating backgrounds) is active.
+   Only applied via the tp-split-chat-active class on the chat container. */
+.tp-split-chat-active .chat-line__message {
     padding: 4px 20px !important;
 }
 
@@ -252,6 +253,13 @@ body.tp-theater-oled {
     overflow: visible;
 }
 
+.tp-settings-emoji {
+    font-size: 18px;
+    line-height: 1;
+    filter: brightness(0.8) sepia(1) hue-rotate(220deg) saturate(4) brightness(1.3);
+    text-shadow: 0 0 6px rgba(145, 71, 255, 0.8), 0 0 14px rgba(145, 71, 255, 0.4);
+}
+
 
 .tp-settings-wrapper {
     position: relative;
@@ -270,6 +278,7 @@ body.tp-theater-oled {
     left: 0;
     width: 100vw;
     height: 100vh;
+    height: 100dvh;
     z-index: 9998;
     background: rgba(0, 0, 0, 0.5);
     backdrop-filter: blur(2px);
@@ -859,6 +868,101 @@ body.tp-theater-oled {
 }
 
 /* ---------------------------------------------------------------------------
+   Anonymous Chat Mode — Leave Prompt
+   --------------------------------------------------------------------------- */
+
+.tp-anon-prompt {
+    position: absolute;
+    bottom: 90px;
+    left: 50%;
+    transform: translateX(-50%);
+    background: #18181b;
+    border: 1px solid #3a3a3d;
+    border-radius: 8px;
+    padding: 14px 18px;
+    z-index: 1000;
+    text-align: center;
+    box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+    max-width: 280px;
+    width: max-content;
+    animation: tp-anon-fade-in 0.15s ease;
+}
+
+@keyframes tp-anon-fade-in {
+    from { opacity: 0; transform: translateX(-50%) translateY(6px); }
+    to   { opacity: 1; transform: translateX(-50%) translateY(0); }
+}
+
+.tp-anon-prompt p {
+    color: #efeff1;
+    font-size: 13px;
+    line-height: 1.4;
+    margin: 0 0 12px;
+}
+
+.tp-anon-prompt-buttons {
+    display: flex;
+    gap: 8px;
+    justify-content: center;
+}
+
+.tp-anon-prompt-btn {
+    padding: 6px 14px;
+    border-radius: 4px;
+    font-size: 12px;
+    font-weight: 600;
+    cursor: pointer;
+    border: none;
+    transition: background 0.1s;
+}
+
+.tp-anon-prompt-btn.primary {
+    background: #9147ff;
+    color: #fff;
+}
+
+.tp-anon-prompt-btn.primary:hover {
+    background: #772ce8;
+}
+
+.tp-anon-prompt-btn.secondary {
+    background: #3a3a3d;
+    color: #efeff1;
+}
+
+.tp-anon-prompt-btn.secondary:hover {
+    background: #4a4a4d;
+}
+
+/* Anonymous mode — persistent bottom banner (like Twitch's "reconnecting to chat...") */
+.tp-anon-banner {
+    padding: 6px 16px;
+    background: rgba(145, 71, 255, 0.15);
+    border-top: 1px solid rgba(145, 71, 255, 0.3);
+    color: #bf94ff;
+    font-size: 12px;
+    text-align: center;
+    font-family: "Inter", "Roobert", "Helvetica Neue", Helvetica, Arial, sans-serif;
+    flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+   Channel Points Popup — prevent right-side clipping
+   The rewards/power-ups popup extends beyond the chat column width.
+   We must set overflow:visible on every ancestor between the popup and
+   the right-column boundary. Chat scrolling is unaffected because it
+   uses a separate nested scroll container (.simplebar-scroll-content).
+   --------------------------------------------------------------------------- */
+/* Channel points rewards popup — JS applies position:fixed when the popup
+   opens (see startRewardsPopupFix in content.js). This z-index ensures it
+   renders above all chat layers. */
+.community-points-summary [role="dialog"],
+.community-points-summary .tw-balloon,
+[data-a-target="community-points-summary"] [role="dialog"] {
+    z-index: 10000 !important;
+}
+
+/* ---------------------------------------------------------------------------
    Mod Tool Buttons
    --------------------------------------------------------------------------- */
 
@@ -878,8 +982,21 @@ body.tp-theater-oled {
     transition: opacity 0.15s;
 }
 
-.chat-line__message:hover .tp-mod-btn {
-    opacity: 1;
+/* Hover devices: show on message hover */
+@media (hover: hover) {
+    .chat-line__message:hover .tp-mod-btn {
+        opacity: 1;
+    }
+}
+
+/* Touch devices: always show mod buttons */
+@media (hover: none) {
+    .tp-mod-btn {
+        opacity: 0.7;
+        padding: 4px 8px;
+        font-size: 12px;
+        min-height: 28px;
+    }
 }
 
 .tp-mod-btn:hover {
@@ -1771,8 +1888,23 @@ body.tp-chat-left .right-column.right-column--theatre {
     padding: 0;
 }
 
-.tp-custom-swatch:hover .tp-custom-swatch-remove {
-    display: block;
+@media (hover: hover) {
+    .tp-custom-swatch:hover .tp-custom-swatch-remove {
+        display: block;
+    }
+}
+
+/* Touch devices: always show remove button */
+@media (hover: none) {
+    .tp-custom-swatch-remove {
+        display: block;
+        width: 22px;
+        height: 22px;
+        font-size: 14px;
+        line-height: 20px;
+        top: -8px;
+        right: -8px;
+    }
 }
 
 .tp-custom-swatch-add {
@@ -1793,4 +1925,267 @@ body.tp-chat-left .right-column.right-column--theatre {
 .tp-custom-swatch-add:hover {
     border-color: #9147ff;
     color: #9147ff;
+}
+
+/* ===========================================================================
+   Mobile / Touch Responsive Overrides
+   =========================================================================== */
+
+/* ── Safe area insets for notch/dynamic island devices ── */
+.tp-settings-panel,
+.tp-settings-backdrop {
+    padding-top: env(safe-area-inset-top, 0px);
+}
+
+/* ── Settings panel: responsive width ── */
+@media (max-width: 500px) {
+    .tp-settings-panel {
+        width: 100vw;
+        border-left: none;
+        border-radius: 0;
+    }
+
+    /* Stack sidebar horizontally on narrow screens */
+    .tp-sidebar-layout {
+        flex-direction: column;
+    }
+
+    .tp-sidebar {
+        width: 100%;
+        flex-direction: row;
+        overflow-x: auto;
+        overflow-y: hidden;
+        border-right: none;
+        border-bottom: 1px solid #2f2f35;
+        padding: 4px 6px;
+        gap: 0;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tp-sidebar-btn {
+        flex-direction: row;
+        gap: 5px;
+        padding: 6px 10px;
+        font-size: 11px;
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    .tp-sidebar-btn svg {
+        width: 16px;
+        height: 16px;
+    }
+
+    .tp-sidebar-content {
+        padding: 8px 0 env(safe-area-inset-bottom, 20px);
+    }
+
+    .tp-panel-footer {
+        padding-bottom: calc(10px + env(safe-area-inset-bottom, 0px));
+    }
+
+    .tp-panel-header {
+        padding-top: calc(12px + env(safe-area-inset-top, 0px));
+    }
+}
+
+/* ── Emote menu: responsive sizing ── */
+@media (max-width: 500px) {
+    .tp-emote-menu {
+        width: calc(100vw - 16px);
+        max-width: 400px;
+        height: min(400px, 60vh);
+        left: 8px !important;
+        right: 8px !important;
+        bottom: env(safe-area-inset-bottom, 8px) !important;
+    }
+
+    .tp-emote-cell {
+        width: 40px;
+        height: 40px;
+    }
+}
+
+/* ── Emote tooltip: keep on screen ── */
+@media (max-width: 500px) {
+    .twitch-plus-tooltip {
+        max-width: calc(100vw - 24px);
+    }
+}
+
+/* ── YouTube preview: responsive ── */
+@media (max-width: 500px) {
+    .tp-yt-preview {
+        max-width: calc(100vw - 24px);
+        flex-direction: column;
+    }
+
+    .tp-yt-preview img {
+        width: 100%;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+}
+
+/* ── Channel preview: responsive ── */
+@media (max-width: 500px) {
+    .tp-channel-preview {
+        max-width: calc(100vw - 24px);
+    }
+
+    .tp-channel-preview img {
+        width: 100%;
+        max-width: 320px;
+        height: auto;
+        aspect-ratio: 16/9;
+    }
+}
+
+/* ── Debug overlay: responsive ── */
+@media (max-width: 500px) {
+    .tp-debug-overlay {
+        width: calc(100vw - 20px);
+        left: 10px;
+        right: 10px;
+        bottom: env(safe-area-inset-bottom, 10px);
+    }
+}
+
+/* ── Completion dropdown: touch-friendly items ── */
+@media (hover: none) {
+    .tp-completion-item {
+        padding: 10px 12px;
+        min-height: 44px;
+    }
+}
+
+/* ── Chat image preview: responsive ── */
+@media (max-width: 500px) {
+    .tp-image-preview {
+        max-width: calc(100vw - 60px);
+    }
+}
+
+/* ── Toggle rows: larger tap targets on touch ── */
+@media (hover: none) {
+    .tp-toggle-row {
+        padding: 12px 16px;
+        min-height: 48px;
+    }
+
+    .tp-toggle-switch {
+        width: 42px;
+        height: 24px;
+    }
+
+    .tp-toggle-slider::before {
+        height: 20px;
+        width: 20px;
+    }
+
+    .tp-toggle-switch input:checked + .tp-toggle-slider::before {
+        transform: translateX(18px);
+    }
+}
+
+/* ── Theme grid: 3 columns on narrow screens ── */
+@media (max-width: 500px) {
+    .tp-theme-grid {
+        grid-template-columns: repeat(3, 1fr);
+    }
+}
+
+/* ── Combo widget: keep visible on mobile ── */
+@media (max-width: 500px) {
+    .tp-combo-widget {
+        right: 8px;
+        bottom: 80px;
+        max-width: 180px;
+    }
+}
+
+/* ── Emote tab buttons: touch-friendly ── */
+@media (hover: none) {
+    .tp-emote-tab {
+        padding: 8px 14px;
+        font-size: 12px;
+        min-height: 36px;
+    }
+}
+
+/* ── Panel close/menu close: larger tap target ── */
+@media (hover: none) {
+    .tp-panel-header .tp-panel-close,
+    .tp-emote-menu-close {
+        width: 36px;
+        height: 36px;
+        font-size: 20px;
+    }
+
+    .tp-chat-search-close {
+        width: 32px;
+        height: 32px;
+        font-size: 18px;
+    }
+
+    .tp-keyword-tag-remove {
+        font-size: 18px;
+        padding: 4px;
+    }
+}
+
+/* ── Screenshot flash: use dvh for mobile ── */
+@media (max-width: 500px) {
+    .tp-screenshot-flash {
+        height: 100dvh;
+    }
+}
+
+/* ── Keyword editor inputs: full width on mobile ── */
+@media (max-width: 500px) {
+    .tp-keyword-input-row {
+        flex-direction: column;
+    }
+
+    .tp-keyword-add-btn {
+        width: 100%;
+        height: 36px;
+    }
+}
+
+/* ── Settings button & emote menu button: larger on touch ── */
+@media (hover: none) {
+    .tp-settings-btn,
+    .tp-emote-menu-btn {
+        width: 36px;
+        height: 36px;
+    }
+}
+
+/* ── Clip download button: larger on touch ── */
+@media (hover: none) {
+    .tp-clip-download-btn {
+        padding: 8px 14px;
+        font-size: 14px;
+    }
+}
+
+/* ── VOD clock: compact on mobile ── */
+@media (max-width: 500px) {
+    .tp-vod-clock {
+        padding: 2px 6px;
+        font-size: 11px;
+        margin-right: 4px;
+    }
+}
+
+/* ---------------------------------------------------------------------------
+   Ad Collapse Chat Button Fix
+   --------------------------------------------------------------------------- */
+
+/* Keep collapse button above ad overlays so it stays clickable during ads */
+.right-column__toggle-visibility,
+[data-a-target="right-column__toggle-collapse-btn"] {
+    z-index: 50 !important;
+    position: relative;
 }

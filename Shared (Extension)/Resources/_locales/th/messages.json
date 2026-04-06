@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "Twitch Plus",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "ปรับปรุง Twitch ด้วยอิโมต BTTV, FFZ และ 7TV การปรับปรุงแชทและอื่นๆ",
+        "description": "Description of what the extension does."
+    }
+}

@@ -1,0 +1,63 @@
+App Store Connect Metadata — Twitch Plus for Safari
+====================================================
+
+Support URL:
+https://corvusdevs.github.io/Twitch-Plus-For-Safari/
+
+Marketing URL:
+https://corvusdevs.github.io/Twitch-Plus-For-Safari/
+
+Privacy Policy URL:
+https://corvusdevs.github.io/Twitch-Plus-For-Safari/privacy
+
+Copyright:
+2026 CorvusDevs
+
+Keywords:
+twitch,bttv,ffz,7tv,emotes,safari,extension,chat,pip,auto-claim
+
+Promotional Text (170 chars max):
+BTTV, FFZ & 7TV emotes in Safari! Auto-claim points, split chat, PiP, anonymous viewing, OLED mode & 50+ features. The Twitch upgrade Safari was missing.
+
+Description:
+Twitch Plus brings the full third-party emote experience to Safari — BetterTTV, FrankerFaceZ, and 7TV emotes render directly in chat, just like on other browsers.
+
+But emotes are just the beginning. Twitch Plus includes 50+ features designed to make Twitch genuinely better:
+
+EMOTES & CHAT
+- Full BetterTTV, FrankerFaceZ, and 7TV emote support
+- Real-time emote updates when streamers add new emotes
+- Split chat with 11 color themes for easier reading
+- Emote tab-completion in the chat input
+- Chat timestamps, spoiler tags, and keyword highlights
+- Spam and bot message filters
+- Searchable chat history
+- User pronouns display
+
+AUTOMATION
+- Auto-claim channel points, Drops, Moments, and watch streaks
+- Set once and never miss a reward again
+
+VIEWING
+- One-click Picture-in-Picture
+- Anonymous viewing mode — watch without appearing in the viewer list
+- Auto theater mode with pure-black OLED backgrounds
+- Transparent chat overlay for cinematic viewing
+- Force any video quality from 160p to Source
+- Quality persists across channel navigation
+
+TOOLS
+- Screenshot and clip download
+- Stream uptime display
+- Follow/unfollow age tracking
+- Channel point balance in the tab title
+
+PRIVACY & PERFORMANCE
+- Zero data collection — no analytics, no tracking, no accounts
+- All settings stored locally on your device
+- Native Safari extension — not a Chrome port
+- Lightweight with minimal resource usage
+
+Fully localized in 19 languages: English, Spanish, French, German, Japanese, Korean, Portuguese, Chinese (Simplified & Traditional), Italian, Russian, Dutch, Turkish, Arabic, Thai, Polish, Swedish, Indonesian.
+
+Requires macOS 14.0 (Sonoma) or later.

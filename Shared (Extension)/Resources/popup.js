@@ -37,7 +37,7 @@
             }
 
             if (status) {
-                status.textContent = response?.error || "Navigate to twitch.tv to access settings.";
+                status.textContent = response?.error || t("popup_navigate");
             }
             if (btn) {
                 btn.disabled = true;
@@ -45,7 +45,7 @@
         } catch (e) {
             console.error("[Twitch Plus Popup] Failed to open settings panel:", e);
             if (status) {
-                status.textContent = "Navigate to twitch.tv to access settings.";
+                status.textContent = t("popup_navigate");
             }
             if (btn) {
                 btn.disabled = true;
@@ -53,9 +53,28 @@
         }
     }
 
-    document.addEventListener("DOMContentLoaded", () => {
+    document.addEventListener("DOMContentLoaded", async () => {
+        // Load language setting and set locale
+        try {
+            const resp = await browser.runtime.sendMessage({ action: "getSettings" });
+            if (resp && resp.settings) {
+                tpSetLocale(resp.settings.language || "auto");
+            }
+        } catch (e) {
+            tpSetLocale("auto");
+        }
+
+        // Localize popup text
+        const titleEl = document.querySelector("h1");
+        if (titleEl) titleEl.textContent = t("popup_title");
+
         const btn = document.getElementById("open-settings");
         if (btn) {
+            // Set localized button text (remove any stale text nodes first)
+            [...btn.childNodes].forEach(n => {
+                if (n.nodeType === Node.TEXT_NODE) n.remove();
+            });
+            btn.appendChild(document.createTextNode(" " + t("popup_open_settings")));
             btn.addEventListener("click", () => openSettingsPanel());
         }
     });

@@ -2,12 +2,14 @@
     -webkit-user-select: none;
     -webkit-user-drag: none;
     cursor: default;
+    box-sizing: border-box;
 }
 
 :root {
     color-scheme: light dark;
-
     --spacing: 20px;
+    --purple: #9147ff;
+    --purple-light: #bf94ff;
 }
 
 html {
@@ -19,15 +21,26 @@ body {
     align-items: center;
     justify-content: center;
     flex-direction: column;
-
     gap: var(--spacing);
-    margin: 0 calc(var(--spacing) * 2);
-    height: 100%;
-
+    margin: 0 auto;
+    padding: 24px;
+    max-width: 480px;
+    min-height: 100%;
     font: -apple-system-short-body;
     text-align: center;
 }
 
+h1 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 700;
+}
+
+@media (prefers-color-scheme: dark) {
+    h1 { color: #efeff1; }
+}
+
+/* Platform visibility */
 body:not(.platform-mac, .platform-ios) :is(.platform-mac, .platform-ios) {
     display: none;
 }
@@ -40,10 +53,7 @@ body.platform-mac .platform-ios {
     display: none;
 }
 
-body.platform-ios .platform-mac {
-    display: none;
-}
-
+/* State visibility */
 body:not(.state-on, .state-off) :is(.state-on, .state-off) {
     display: none;
 }
@@ -56,6 +66,85 @@ body.state-off :is(.state-on, .state-unknown) {
     display: none;
 }
 
+/* State badges */
+.state-on {
+    color: #22c55e;
+    font-weight: 600;
+}
+
+.state-off {
+    color: #ef4444;
+    font-weight: 600;
+}
+
+/* Instructions */
+.instructions {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.03);
+}
+
+@media (prefers-color-scheme: dark) {
+    .instructions {
+        background: rgba(255, 255, 255, 0.06);
+    }
+}
+
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+
+.step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px;
+    height: 24px;
+    border-radius: 50%;
+    background: var(--purple);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+
+.step span:last-child {
+    padding-top: 2px;
+}
+
 button {
     font-size: 1em;
+    padding: 10px 20px;
+    border-radius: 8px;
+    border: none;
+    background: var(--purple);
+    color: #fff;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.15s;
+}
+
+button:hover {
+    background: #772ce8;
+}
+
+/* Hide button when extension is already on */
+body.state-on .open-preferences {
+    background: rgba(0, 0, 0, 0.1);
+    color: inherit;
+}
+
+@media (prefers-color-scheme: dark) {
+    body.state-on .open-preferences {
+        background: rgba(255, 255, 255, 0.1);
+    }
 }

@@ -28,7 +28,8 @@
     let username = null;         // logged-in user's display name
     let userColorIndex = 0;      // rotating index for alternating user bg colors
     const userColorMap = {};     // username -> color index for consistent coloring
-    let altRowIndex = 0;         // counter for alternating chat row backgrounds
+    // (altRowIndex removed — DOM-based alternation now used in processMessage)
+    let frequentEmotes = {};     // emoteName -> usage count (loaded from storage)
 
     // ---------------------------------------------------------------------------
     // Alternating Chat Color Presets
@@ -161,6 +162,9 @@
     let channelPreviewTimer = null;    // debounce timer
     let slowModeTimer = null;          // slow mode countdown interval
     let sidebarExpandObserver = null;  // auto-expand observer
+
+    // Touch device detection (updated on first touch)
+    let isTouchDevice = ('ontouchstart' in window) || (navigator.maxTouchPoints > 0);
 
     // ---------------------------------------------------------------------------
     // 1. Inject page-world script
@@ -311,17 +315,29 @@
 
     // Multiple selectors for chat containers (Twitch changes these periodically)
     const CHAT_CONTAINER_SELECTORS = [
+        // Live chat
         ".chat-scrollable-area__message-container",
         "section[data-test-selector='chat-room-component-layout'] .simplebar-content",
         ".chat-list--default .simplebar-content",
         ".chat-list .chat-scrollable-area__message-container",
+        // VOD chat replay
+        ".video-chat__message-list-wrapper",
+        ".qa-vod-chat",
+        ".va-vod-chat",
+        ".video-chat",
     ];
 
     // Multiple selectors for chat message lines
     const CHAT_LINE_SELECTORS = [
+        // Live chat
         ".chat-line__message",
         "[data-a-target='chat-line-message']",
         ".chat-line__message--emote-button",
+        // VOD chat replay
+        ".vod-message",
+        ".vod-message__content",
+        "[data-test-selector='comment-message-selector']",
+        ".video-chat__message",
     ];
     const CHAT_LINE_SELECTOR = CHAT_LINE_SELECTORS.join(", ");
 
@@ -403,8 +419,14 @@
      */
     function isMessageElement(el) {
         if (!el || !el.classList) return false;
+        // Live chat
         if (el.classList.contains("chat-line__message")) return true;
         if (el.getAttribute?.("data-a-target") === "chat-line-message") return true;
+        // VOD chat replay
+        if (el.classList.contains("vod-message")) return true;
+        if (el.classList.contains("vod-message__content")) return true;
+        if (el.classList.contains("video-chat__message")) return true;
+        if (el.getAttribute?.("data-test-selector") === "comment-message-selector") return true;
         return false;
     }
 
@@ -469,11 +491,42 @@
         // Chat image previews (inline)
         attachImagePreviewListeners(msg);
 
-        // Alternating row backgrounds — apply inline style like BTTV
+        // Alternating row backgrounds — DOM-based to stay in sync
+        // even when Twitch removes old messages from the DOM.
+        // Twitch wraps each message in a container div, so we must
+        // walk parent-wrapper siblings (not direct siblings).
         if (settings.splitChat !== false) {
             const colors = getSplitChatColors();
-            msg.style.backgroundColor = colors[altRowIndex % colors.length];
-            altRowIndex++;
+            let prevMsg = null;
+
+            // Strategy 1: direct previous sibling (flat DOM)
+            let sib = msg.previousElementSibling;
+            while (sib) {
+                if (isMessageElement(sib) && sib.dataset.tpColorIdx !== undefined) {
+                    prevMsg = sib; break;
+                }
+                sib = sib.previousElementSibling;
+            }
+
+            // Strategy 2: parent wrapper's previous siblings (wrapped DOM)
+            if (!prevMsg && msg.parentElement) {
+                let prevWrap = msg.parentElement.previousElementSibling;
+                while (prevWrap) {
+                    if (isMessageElement(prevWrap) && prevWrap.dataset.tpColorIdx !== undefined) {
+                        prevMsg = prevWrap; break;
+                    }
+                    if (prevWrap.querySelector) {
+                        const inner = prevWrap.querySelector("[data-tp-color-idx]");
+                        if (inner) { prevMsg = inner; break; }
+                    }
+                    prevWrap = prevWrap.previousElementSibling;
+                }
+            }
+
+            const prevIdx = prevMsg ? parseInt(prevMsg.dataset.tpColorIdx, 10) : -1;
+            const colorIndex = (prevIdx + 1) % colors.length;
+            msg.style.backgroundColor = colors[colorIndex];
+            msg.dataset.tpColorIdx = String(colorIndex);
         }
     }
 
@@ -651,7 +704,7 @@
     function processEmotesInMessage(messageEl) {
         if (emoteMap.size === 0) return;
 
-        // Primary: Twitch wraps text in .text-fragment spans
+        // Primary: Twitch wraps text in .text-fragment spans (works for both live & some VOD messages)
         const textFragments = messageEl.querySelectorAll(
             "[data-a-target=\"chat-message-text\"] .text-fragment, " +
             ".message .text-fragment, " +
@@ -666,29 +719,58 @@
             return;
         }
 
-        // Fallback 1: process childNodes of the message text container directly.
+        // Fallback 1: VOD chat replay — text lives in different containers
+        // VOD messages use .video-chat__message spans or direct text in .vod-message__content
+        const vodTextContainers = messageEl.querySelectorAll(
+            ".video-chat__message span[data-a-target='chat-message-text'], " +
+            "[data-a-target='chat-message-text'], " +
+            ".vod-message__content span[data-a-target='chat-message-text']"
+        );
+
+        if (vodTextContainers.length > 0) {
+            for (const container of vodTextContainers) {
+                // Check for .text-fragment children first
+                const fragments = container.querySelectorAll(".text-fragment");
+                if (fragments.length > 0) {
+                    for (const f of fragments) replaceEmotesInTextNode(f);
+                } else {
+                    // Process raw text nodes directly
+                    processChildTextNodes(container);
+                }
+            }
+            return;
+        }
+
+        // Fallback 2: process childNodes of the message text container directly.
         // BTTV uses this approach — Twitch may not always use .text-fragment spans.
         const msgBody = messageEl.querySelector(
             "span[data-a-target='chat-message-text'], " +
             "[data-a-target='chat-message-text'], " +
             ".chat-line__message-body, " +
-            "[class*='message-container']"
+            "[class*='message-container'], " +
+            ".vod-message__content"
         );
         if (msgBody) {
-            // Walk childNodes: process text nodes and text-containing spans
-            const children = [...msgBody.childNodes];
-            for (const child of children) {
-                if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
-                    // Wrap in a span so replaceEmotesInTextNode can replace it
-                    const wrapper = document.createElement("span");
-                    wrapper.textContent = child.textContent;
-                    child.replaceWith(wrapper);
-                    replaceEmotesInTextNode(wrapper);
-                } else if (child.nodeType === Node.ELEMENT_NODE) {
-                    // Process spans that contain only text (no nested elements like badges)
-                    if (child.children.length === 0 && child.textContent?.trim()) {
-                        replaceEmotesInTextNode(child);
-                    }
+            processChildTextNodes(msgBody);
+        }
+    }
+
+    /**
+     * Walk child nodes of a container and replace emote text in text nodes and simple spans.
+     */
+    function processChildTextNodes(container) {
+        const children = [...container.childNodes];
+        for (const child of children) {
+            if (child.nodeType === Node.TEXT_NODE && child.textContent?.trim()) {
+                // Wrap in a span so replaceEmotesInTextNode can replace it
+                const wrapper = document.createElement("span");
+                wrapper.textContent = child.textContent;
+                child.replaceWith(wrapper);
+                replaceEmotesInTextNode(wrapper);
+            } else if (child.nodeType === Node.ELEMENT_NODE) {
+                // Process spans that contain only text (no nested elements like badges)
+                if (child.children.length === 0 && child.textContent?.trim()) {
+                    replaceEmotesInTextNode(child);
                 }
             }
         }
@@ -739,9 +821,17 @@
             img.dataset.tpEmoteUrl4x = emote.url4x;
             img.loading = "lazy";
 
-            // Add tooltip listeners
+            // Add tooltip listeners (hover for desktop, tap for touch)
             img.addEventListener("mouseenter", showTooltip);
             img.addEventListener("mouseleave", hideTooltip);
+            img.addEventListener("touchstart", (e) => {
+                if (tooltipEl) { hideTooltip(); return; }
+                e.preventDefault();
+                showTooltip(e);
+                // Dismiss tooltip on next tap anywhere
+                const dismiss = () => { hideTooltip(); document.removeEventListener("touchstart", dismiss, true); };
+                setTimeout(() => document.addEventListener("touchstart", dismiss, true), 50);
+            }, { passive: false });
 
             if (emote.zeroWidth && lastEmoteContainer) {
                 // Zero-width emote: overlay on the previous emote container
@@ -804,7 +894,9 @@
         const lowerUser = username.toLowerCase();
         if (text.includes(`@${lowerUser}`) || text.includes(lowerUser)) {
             // Check it's actually in the message body, not just the username
-            const msgText = messageEl.querySelector("[data-a-target=\"chat-message-text\"]");
+            const msgText = messageEl.querySelector(
+                "[data-a-target=\"chat-message-text\"], .vod-message__content"
+            );
             if (msgText && msgText.textContent.toLowerCase().includes(lowerUser)) {
                 messageEl.classList.add("twitch-plus-mention-highlight");
             }
@@ -926,14 +1018,26 @@
 
     const DROP_SELECTORS = [
         "[data-test-selector='DropsCampaignInProgressRewardPresentation-claim-button']",
+        "[data-test-selector='DropsHighlightRewardPresentation-claim-button']",
+        "[data-test-selector='DropsClaimButton']",
         "button[data-a-target='drops-claim-button']",
         ".claimable-drop button",
+        "[class*='drops'] button[class*='claim']",
+        "[class*='drop-claim'] button",
     ];
 
     const MOMENT_SELECTORS = [
         "[data-test-selector='moment-claim-button']",
         "button[aria-label='Claim Now']",
         ".community-moments-claim button",
+    ];
+
+    const STREAK_SELECTORS = [
+        "[data-test-selector*='streak'] button",
+        "[data-test-selector*='watch-streak'] button",
+        "button[data-a-target*='watch-streak']",
+        "button[data-a-target*='streak-share']",
+        ".chat-private-callout button",
     ];
 
     function findClaimButton(selectors) {
@@ -975,6 +1079,15 @@
                 console.log("[Twitch Plus] Auto-claimed moment.");
             }
         }
+
+        if (settings.autoClaimStreaks !== false) {
+            const btn = findClaimButton(STREAK_SELECTORS);
+            if (btn) {
+                btn.click();
+                lastClaimTime = Date.now();
+                console.log("[Twitch Plus] Auto-claimed watch streak.");
+            }
+        }
     }
 
     function startAutoClaimPoints() {
@@ -990,8 +1103,8 @@
         }
 
         // Strategy 2: Fallback interval that self-upgrades to observer once summary appears.
-        // Once the observer is attached, increase the polling interval since the observer
-        // handles the hot path (points). Interval only catches drops/moments.
+        // The observer handles the hot path (channel points). The interval continues at
+        // 10s to catch drops, moments, and streaks which appear elsewhere in the DOM.
         autoClaimInterval = setInterval(() => {
             if (!autoClaimObserver) {
                 const summary = document.querySelector(".community-points-summary");
@@ -999,13 +1112,10 @@
                     autoClaimObserver = new MutationObserver(() => tryClaimAll());
                     autoClaimObserver.observe(summary, { childList: true, subtree: true });
                     console.log("[Twitch Plus] Auto-claim observer attached (delayed).");
-                    // Slow down polling now that observer handles points
-                    clearInterval(autoClaimInterval);
-                    autoClaimInterval = setInterval(() => tryClaimAll(), 30000);
                 }
             }
             tryClaimAll();
-        }, 5000);
+        }, 10000);
 
         // Try claiming immediately
         tryClaimAll();
@@ -1019,6 +1129,76 @@
         if (autoClaimInterval) {
             clearInterval(autoClaimInterval);
             autoClaimInterval = null;
+        }
+    }
+
+    // ---- Channel-points popup: prevent right-side clipping ----
+    // Twitch wraps the rewards popup in many nested overflow:hidden ancestors.
+    // CSS overflow:visible on ancestors doesn't reliably reach them all.
+    // Instead, we observe for the popup and reposition it with position:fixed.
+    let rewardsPopupObserver = null;
+
+    function startRewardsPopupFix() {
+        if (rewardsPopupObserver) return;
+
+        const watchForPopup = () => {
+            const anchor = document.querySelector(".community-points-summary, [data-a-target='community-points-summary']");
+            if (!anchor) return false;
+
+            rewardsPopupObserver = new MutationObserver(() => {
+                repositionRewardsPopup(anchor);
+            });
+            rewardsPopupObserver.observe(anchor, { childList: true, subtree: true });
+            console.log("[Twitch Plus] Rewards popup fix observer attached.");
+            return true;
+        };
+
+        if (!watchForPopup()) {
+            // Retry until the points summary element exists
+            const retryId = setInterval(() => {
+                if (watchForPopup()) clearInterval(retryId);
+            }, 3000);
+        }
+    }
+
+    function repositionRewardsPopup(anchor) {
+        // Twitch renders the popup as [role="dialog"] or .tw-balloon inside the summary
+        const popup = anchor.querySelector('[role="dialog"], .tw-balloon, [class*="ScBalloonWrapper"]');
+        if (!popup || popup.dataset.tpFixed) return;
+
+        // Mark so we don't reprocess
+        popup.dataset.tpFixed = "1";
+
+        // Get the anchor button's position to align the popup
+        const btn = anchor.querySelector("button") || anchor;
+        const btnRect = btn.getBoundingClientRect();
+
+        // Apply fixed positioning so the popup escapes all overflow:hidden ancestors
+        popup.style.position = "fixed";
+        popup.style.zIndex = "10000";
+        // Align the popup's right edge to the button's right edge
+        // and position it just below the button
+        popup.style.top = (btnRect.bottom + 8) + "px";
+        // Align right edge of popup with right edge of button
+        popup.style.right = (window.innerWidth - btnRect.right) + "px";
+        popup.style.left = "auto";
+
+        // Ensure the popup doesn't go off-screen to the left
+        requestAnimationFrame(() => {
+            const popupRect = popup.getBoundingClientRect();
+            if (popupRect.left < 8) {
+                popup.style.right = "auto";
+                popup.style.left = "8px";
+            }
+        });
+
+        console.log("[Twitch Plus] Rewards popup repositioned with position:fixed.");
+    }
+
+    function stopRewardsPopupFix() {
+        if (rewardsPopupObserver) {
+            rewardsPopupObserver.disconnect();
+            rewardsPopupObserver = null;
         }
     }
 
@@ -1115,6 +1295,91 @@
         }
     }
 
+    // ---- Auto-reload player on error ----
+    // Twitch's IVS player sometimes shows "Error #1000" / "Error #2000" overlays
+    // with a "click here to reload player" button. This polls for that button
+    // and auto-clicks it so the stream resumes without user intervention.
+    let playerReloadInterval = null;
+
+    function startPlayerAutoReload() {
+        if (playerReloadInterval) return;
+        if (!settings.autoReloadPlayer) return;
+
+        // Selectors for the various error/reload button states Twitch uses.
+        // These target the error overlay's clickable elements.
+        const RELOAD_SELECTORS = [
+            "[data-a-target='player-overlay-content-gate'] button",
+            "[data-a-target='player-overlay-content-gate'] [class*='allow-pointers']",
+            "button[data-a-target='player-reload-button']",
+            ".content-overlay-gate button",
+            ".content-overlay-gate [class*='allow-pointers']",
+            "[class*='content-overlay-gate'] button",
+            "[class*='content-overlay-gate'] p[style]",
+            ".player-overlay-background button",
+            "[class*='error-overlay'] button",
+            "[class*='player-error'] button",
+        ];
+
+        // Broader player container selectors to scope the text search
+        const PLAYER_CONTAINERS = [
+            ".video-player",
+            "[data-a—target='video-player']",
+            ".persistent-player",
+            "[class*='player-overlay']",
+            "[class*='content-overlay']",
+        ];
+
+        playerReloadInterval = setInterval(() => {
+            if (!settings.autoReloadPlayer) return;
+
+            // Strategy 1: Try specific selectors
+            for (const sel of RELOAD_SELECTORS) {
+                const btn = document.querySelector(sel);
+                if (btn && isElementVisible(btn)) {
+                    console.log(`[Twitch Plus] Player error detected — auto-clicking reload (selector: ${sel}).`);
+                    btn.click();
+                    return;
+                }
+            }
+
+            // Strategy 2: Text-based search — find any clickable element in the
+            // player area that says "reload" (language-agnostic: also check for
+            // the reload icon or red-styled button in the player)
+            for (const containerSel of PLAYER_CONTAINERS) {
+                const container = document.querySelector(containerSel);
+                if (!container) continue;
+                // Look for any element with "reload" text
+                const allClickable = container.querySelectorAll("button, [role='button'], p[style*='cursor'], a, [class*='allow-pointers']");
+                for (const el of allClickable) {
+                    const text = el.textContent?.toLowerCase() || "";
+                    if ((text.includes("reload") || text.includes("try again") || text.includes("reintentar") || text.includes("recharger") || text.includes("neu laden")) && isElementVisible(el)) {
+                        console.log(`[Twitch Plus] Player error detected — auto-clicking reload (text match: "${el.textContent.trim().slice(0, 50)}").`);
+                        el.click();
+                        return;
+                    }
+                }
+            }
+        }, 3000);
+
+        console.log("[Twitch Plus] Player auto-reload watcher started.");
+    }
+
+    /** Check if an element is visible (not hidden or zero-size). */
+    function isElementVisible(el) {
+        if (!el) return false;
+        // offsetParent is null for hidden elements, but also for fixed/body children
+        // Use getBoundingClientRect for a more reliable check
+        const rect = el.getBoundingClientRect();
+        return rect.width > 0 && rect.height > 0;
+    }
+
+    function stopPlayerAutoReload() {
+        if (playerReloadInterval) {
+            clearInterval(playerReloadInterval);
+            playerReloadInterval = null;
+        }
+    }
+
     // ---------------------------------------------------------------------------
     // 8. Chat Font Customization, Lurk Mode, Emote Tab-Completion
     // ---------------------------------------------------------------------------
@@ -1162,7 +1427,7 @@
                 chatInputArea.style.position = "relative";
                 const indicator = document.createElement("div");
                 indicator.className = "tp-lurk-indicator";
-                indicator.textContent = "Lurk Mode";
+                indicator.textContent = t("lurk_indicator");
                 chatInputArea.appendChild(indicator);
             }
         }
@@ -1172,6 +1437,183 @@
         document.body.classList.remove("tp-lurk-active");
         const indicator = document.querySelector(".tp-lurk-indicator");
         if (indicator) indicator.remove();
+    }
+
+    /**
+     * Anonymous chat — show a prompt when the user tries to send a message,
+     * asking if they want to leave anonymous mode.
+     */
+    function showAnonPrompt() {
+        // Don't stack multiple prompts
+        if (document.querySelector(".tp-anon-prompt")) return;
+
+        const chatContainer = document.querySelector(".stream-chat") ||
+                              document.querySelector(".chat-shell") ||
+                              document.querySelector("[data-test-selector='chat-room-component-layout']");
+        if (!chatContainer) return;
+
+        const prompt = document.createElement("div");
+        prompt.className = "tp-anon-prompt";
+
+        const msg = document.createElement("p");
+        msg.textContent = t("anon_leave_msg");
+        prompt.appendChild(msg);
+
+        const buttons = document.createElement("div");
+        buttons.className = "tp-anon-prompt-buttons";
+
+        const leaveBtn = document.createElement("button");
+        leaveBtn.className = "tp-anon-prompt-btn primary";
+        leaveBtn.textContent = t("anon_leave_btn");
+        leaveBtn.addEventListener("click", () => {
+            prompt.remove();
+            // Disable anonymous mode
+            settings.anonChat = false;
+            browser.runtime.sendMessage({ type: "setSetting", key: "anonChat", value: false });
+            applySettingChange("anonChat", false);
+            // Update toggle in settings panel if open
+            const toggle = document.querySelector('[data-setting="anonChat"]');
+            if (toggle) toggle.checked = false;
+        });
+
+        const cancelBtn = document.createElement("button");
+        cancelBtn.className = "tp-anon-prompt-btn secondary";
+        cancelBtn.textContent = t("anon_cancel");
+        cancelBtn.addEventListener("click", () => {
+            prompt.remove();
+        });
+
+        buttons.appendChild(leaveBtn);
+        buttons.appendChild(cancelBtn);
+        prompt.appendChild(buttons);
+
+        // Ensure container has positioning context
+        const pos = getComputedStyle(chatContainer).position;
+        if (pos === "static") chatContainer.style.position = "relative";
+        chatContainer.appendChild(prompt);
+    }
+
+    // Listen for blocked message attempts in anonymous mode (WebSocket-level fallback)
+    document.addEventListener("tp-anon-msg-blocked", () => {
+        if (settings.anonChat) showAnonPrompt();
+    });
+
+    // Intercept chat input at the DOM level (capturing phase — fires before React).
+    // This catches Enter key and Send button clicks regardless of whether Twitch
+    // uses IRC PRIVMSG or GQL mutations to send messages.
+    document.addEventListener("keydown", (e) => {
+        if (!settings.anonChat) return;
+        if (e.key !== "Enter" || e.shiftKey) return; // Shift+Enter = newline, not send
+        const target = e.target;
+        const isChatInput = target.matches(
+            "[data-a-target='chat-input'], " +
+            "[data-a-target='chat-input'] textarea, " +
+            "[data-a-target='chat-input'] [contenteditable], " +
+            ".chat-wysiwyg-input__editor, " +
+            ".chat-wysiwyg-input__editor *"
+        );
+        if (!isChatInput) return;
+        // Check if there's actual text to send
+        const text = (target.value || target.textContent || "").trim();
+        if (!text) return;
+        e.stopPropagation();
+        e.preventDefault();
+        showAnonPrompt();
+    }, true); // true = capturing phase
+
+    document.addEventListener("click", (e) => {
+        if (!settings.anonChat) return;
+        const btn = e.target.closest("[data-a-target='chat-send-button']");
+        if (!btn) return;
+        e.stopPropagation();
+        e.preventDefault();
+        showAnonPrompt();
+    }, true); // true = capturing phase
+
+    /**
+     * Inject a system-style message into the chat area (like BTTV admin messages).
+     */
+    function injectChatAdminMessage(text) {
+        const container = document.querySelector(
+            ".chat-scrollable-area__message-container"
+        );
+        if (!container) return;
+
+        const msgDiv = document.createElement("div");
+        msgDiv.className = "chat-line__status";
+        msgDiv.style.cssText = "padding: 5px 20px; color: #bf94ff; font-size: 13px; opacity: 0.85;";
+        msgDiv.textContent = text;
+        container.appendChild(msgDiv);
+
+        // Scroll to bottom
+        const scroller = container.closest(".simplebar-scroll-content") ||
+                         container.closest("[class*='scrollable']");
+        if (scroller) {
+            requestAnimationFrame(() => {
+                scroller.scrollTop = scroller.scrollHeight;
+            });
+        }
+    }
+
+    // Listen for anon mode status changes from injected.js
+    document.addEventListener("tp-anon-status", (e) => {
+        const { active } = e.detail || {};
+        if (active) {
+            showAnonBanner();
+        } else {
+            removeAnonBanner();
+            injectChatAdminMessage("[Twitch Plus] Reconnecting to chat...");
+            // Dim the chat input while reconnecting
+            const chatInput = document.querySelector(".chat-input");
+            if (chatInput) chatInput.style.opacity = "0.4";
+        }
+    });
+
+    // Listen for confirmed reconnection after leaving anon mode
+    document.addEventListener("tp-anon-rejoined", () => {
+        console.log("[Twitch Plus] Anon reconnect confirmed — chat is ready.");
+        injectChatAdminMessage("[Twitch Plus] Reconnected — you can chat again.");
+        // Restore chat input
+        const chatInput = document.querySelector(".chat-input");
+        if (chatInput) chatInput.style.opacity = "";
+        // Scroll chat to bottom to flush any pending renders
+        const container = document.querySelector(".chat-scrollable-area__message-container");
+        if (container) {
+            const scroller = container.closest(".simplebar-scroll-content") ||
+                             container.closest("[class*='scrollable']");
+            if (scroller) {
+                requestAnimationFrame(() => {
+                    scroller.scrollTop = scroller.scrollHeight;
+                });
+            }
+        }
+    });
+
+    /**
+     * Show a persistent banner at the bottom of the chat (above the input),
+     * similar to Twitch's native "reconnecting to chat..." status bar.
+     */
+    function showAnonBanner() {
+        if (document.querySelector(".tp-anon-banner")) return;
+
+        // Find the chat input area — the banner sits right above it
+        const chatInput = document.querySelector(".chat-input") ||
+                          document.querySelector("[data-a-target='chat-input']")?.closest(".chat-input") ||
+                          document.querySelector(".chat-input__buttons-container")?.parentElement;
+        if (!chatInput) {
+            // Fallback: just inject as chat message if we can't find the input area
+            injectChatAdminMessage("[Twitch Plus] Anonymous mode — you are hidden.");
+            return;
+        }
+
+        const banner = document.createElement("div");
+        banner.className = "tp-anon-banner";
+        banner.textContent = t("anon_chat_banner") || "Anonymous mode — you are hidden.";
+        chatInput.parentElement.insertBefore(banner, chatInput);
+    }
+
+    function removeAnonBanner() {
+        document.querySelectorAll(".tp-anon-banner").forEach(el => el.remove());
     }
 
     /**
@@ -1360,7 +1802,7 @@
 
         const btn = document.createElement("button");
         btn.className = "tp-emote-menu-btn";
-        btn.title = "Emote Menu";
+        btn.title = t("emote_menu_title");
         btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M10 0C4.477 0 0 4.477 0 10s4.477 10 10 10 10-4.477 10-10S15.523 0 10 0zm0 18.5a8.5 8.5 0 1 1 0-17 8.5 8.5 0 0 1 0 17zM6.5 7.5a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zm7 0a1.25 1.25 0 1 1 0-2.5 1.25 1.25 0 0 1 0 2.5zM5 11.5a.75.75 0 0 1 .68-.44h8.64a.75.75 0 0 1 .68 1.06A5.48 5.48 0 0 1 10 15a5.48 5.48 0 0 1-4.32-2.88.75.75 0 0 1 .32-.62z"/></svg>`;
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -1381,17 +1823,23 @@
         const menu = document.createElement("div");
         menu.className = "tp-emote-menu";
 
-        // Position above the button
+        // Position above the button (responsive for mobile)
         const rect = anchorBtn.getBoundingClientRect();
-        menu.style.bottom = `${window.innerHeight - rect.top + 4}px`;
-        menu.style.right = `${window.innerWidth - rect.right}px`;
+        const isMobile = window.innerWidth <= 500;
+        if (isMobile) {
+            // On mobile, CSS handles width/left/right/bottom via @media query
+            menu.style.bottom = `${Math.max(8, window.innerHeight - rect.top + 4)}px`;
+        } else {
+            menu.style.bottom = `${window.innerHeight - rect.top + 4}px`;
+            menu.style.right = `${window.innerWidth - rect.right}px`;
+        }
 
         // Header with search
         const header = document.createElement("div");
         header.className = "tp-emote-menu-header";
         const searchInput = document.createElement("input");
         searchInput.className = "tp-emote-search";
-        searchInput.placeholder = "Search emotes...";
+        searchInput.placeholder = t("emote_search_ph");
         searchInput.type = "text";
         header.appendChild(searchInput);
         const closeBtn = document.createElement("button");
@@ -1402,7 +1850,7 @@
         menu.appendChild(header);
 
         // Tabs
-        const providers = ["All", "BTTV", "FFZ", "7TV"];
+        const providers = ["\u2605", "All", "BTTV", "FFZ", "7TV"];
         const tabBar = document.createElement("div");
         tabBar.className = "tp-emote-tabs";
         let activeProvider = "All";
@@ -1414,7 +1862,12 @@
             grid.innerHTML = "";
             const entries = [...emoteMap.entries()];
             let filtered = entries;
-            if (providerFilter && providerFilter !== "All") {
+
+            // Frequently Used tab — show only emotes with usage, sorted by count
+            if (providerFilter === "\u2605") {
+                filtered = filtered.filter(([name]) => frequentEmotes[name] > 0);
+                filtered.sort((a, b) => (frequentEmotes[b[0]] || 0) - (frequentEmotes[a[0]] || 0));
+            } else if (providerFilter && providerFilter !== "All") {
                 const pMap = { "BTTV": "bttv", "FFZ": "ffz", "7TV": "7tv" };
                 const pKey = pMap[providerFilter];
                 filtered = filtered.filter(([, e]) => e.source === pKey);
@@ -1422,11 +1875,23 @@
             if (filter) {
                 const lower = filter.toLowerCase();
                 filtered = filtered.filter(([name]) => name.toLowerCase().includes(lower));
+                // Sort: exact match > prefix match > substring match, then alphabetical
+                filtered.sort((a, b) => {
+                    const aName = a[0].toLowerCase();
+                    const bName = b[0].toLowerCase();
+                    const aExact = aName === lower;
+                    const bExact = bName === lower;
+                    if (aExact !== bExact) return aExact ? -1 : 1;
+                    const aPrefix = aName.startsWith(lower);
+                    const bPrefix = bName.startsWith(lower);
+                    if (aPrefix !== bPrefix) return aPrefix ? -1 : 1;
+                    return aName.localeCompare(bName);
+                });
             }
             if (filtered.length === 0) {
                 const empty = document.createElement("div");
                 empty.className = "tp-emote-grid-empty";
-                empty.textContent = "No emotes found";
+                empty.textContent = t("emote_search_empty");
                 grid.appendChild(empty);
                 return;
             }
@@ -1452,6 +1917,7 @@
             const tab = document.createElement("button");
             tab.className = "tp-emote-tab" + (p === activeProvider ? " tp-emote-tab-active" : "");
             tab.textContent = p;
+            if (p === "\u2605") tab.title = t("emote_tab_frequent");
             tab.addEventListener("click", () => {
                 activeProvider = p;
                 tabBar.querySelectorAll(".tp-emote-tab").forEach((t) =>
@@ -1564,6 +2030,15 @@
                 data: textToInsert,
                 bubbles: true,
             }));
+        }
+
+        // Track emote usage for "Frequently Used" tab
+        if (emoteMap.has(emoteName)) {
+            frequentEmotes[emoteName] = (frequentEmotes[emoteName] || 0) + 1;
+            browser.runtime.sendMessage({
+                action: "saveFrequentEmotes",
+                data: frequentEmotes,
+            }).catch(() => {});
         }
     }
 
@@ -1761,7 +2236,7 @@
 
         // Get message text — try multiple selectors to catch emote-only messages too
         const msgBody = messageEl.querySelector(
-            "[data-a-target='chat-message-text'], .chat-line__message-body, [class*='message-container']"
+            "[data-a-target='chat-message-text'], .chat-line__message-body, [class*='message-container'], .vod-message__content"
         );
         if (!msgBody) return false;
 
@@ -1909,6 +2384,18 @@
 
             link.addEventListener("mouseenter", (e) => showYoutubePreview(e, href));
             link.addEventListener("mouseleave", hideYoutubePreview);
+            // Touch: long-press to preview, tap navigates normally
+            let ytTouchTimer = null;
+            link.addEventListener("touchstart", (e) => {
+                ytTouchTimer = setTimeout(() => {
+                    e.preventDefault();
+                    showYoutubePreview(e, href);
+                    const dismiss = () => { hideYoutubePreview(); document.removeEventListener("touchstart", dismiss, true); };
+                    setTimeout(() => document.addEventListener("touchstart", dismiss, true), 50);
+                }, 500);
+            }, { passive: false });
+            link.addEventListener("touchend", () => clearTimeout(ytTouchTimer));
+            link.addEventListener("touchmove", () => clearTimeout(ytTouchTimer));
         }
     }
 
@@ -1984,7 +2471,7 @@
 
         const btn = document.createElement("button");
         btn.className = "tp-player-btn tp-pip-btn";
-        btn.title = "Picture-in-Picture";
+        btn.title = t("pip_title");
         btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M2 3a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1h16a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H2zm0 1.5h16v11H2v-11zm8.5 5h5.5v4.5h-5.5v-4.5z"/></svg>`;
 
         btn.addEventListener("click", async () => {
@@ -2024,7 +2511,7 @@
 
         const btn = document.createElement("button");
         btn.className = "tp-player-btn tp-screenshot-btn";
-        btn.title = "Screenshot";
+        btn.title = t("screenshot_title");
         btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M7.5 2L6 4H3a1 1 0 0 0-1 1v11a1 1 0 0 0 1 1h14a1 1 0 0 0 1-1V5a1 1 0 0 0-1-1h-3l-1.5-2h-5zM10 14a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm0-1.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5z"/></svg>`;
 
         btn.addEventListener("click", () => {
@@ -2172,6 +2659,27 @@
             hideChannelPreview();
         }, true);
 
+        // Touch: long-press to preview sidebar channel
+        let chPreviewTouchTimer = null;
+        document.addEventListener("touchstart", (e) => {
+            const link = e.target.closest?.(sidebarSel);
+            if (!link) return;
+            const href = link.getAttribute("href") || link.querySelector("a")?.getAttribute("href") || "";
+            const match = href.match(/^\/([a-zA-Z0-9_]+)\/?$/);
+            if (!match) return;
+            const login = match[1].toLowerCase();
+            const excluded = new Set(["directory", "settings", "subscriptions", "inventory", "wallet", "friends", "moderator", "search", "following", "videos"]);
+            if (excluded.has(login)) return;
+            chPreviewTouchTimer = setTimeout(() => {
+                e.preventDefault();
+                showChannelPreview(e, login);
+                const dismiss = () => { hideChannelPreview(); document.removeEventListener("touchstart", dismiss, true); };
+                setTimeout(() => document.addEventListener("touchstart", dismiss, true), 50);
+            }, 500);
+        }, { passive: false, capture: true });
+        document.addEventListener("touchend", () => clearTimeout(chPreviewTouchTimer), true);
+        document.addEventListener("touchmove", () => clearTimeout(chPreviewTouchTimer), true);
+
         // Clean up preview on click (navigating to a channel)
         document.addEventListener("click", (e) => {
             if (e.target.closest?.(sidebarSel)) {
@@ -2286,7 +2794,7 @@
         searchBar.className = "tp-chat-search";
 
         const input = document.createElement("input");
-        input.placeholder = "Search chat...";
+        input.placeholder = t("chat_search_ph");
         input.type = "text";
         searchBar.appendChild(input);
 
@@ -2355,7 +2863,7 @@
 
         const btn = document.createElement("button");
         btn.className = "tp-clip-download-btn";
-        btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M10 2v10.585l3.293-3.292 1.414 1.414L10 15.414l-4.707-4.707 1.414-1.414L10 12.585V2zm-7 14h14v2H3v-2z"/></svg> Download`;
+        btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M10 2v10.585l3.293-3.292 1.414 1.414L10 15.414l-4.707-4.707 1.414-1.414L10 12.585V2zm-7 14h14v2H3v-2z"/></svg> ${t("download")}`;
 
         btn.addEventListener("click", async () => {
             const video = document.querySelector("video");
@@ -2364,7 +2872,7 @@
                 return;
             }
             try {
-                btn.textContent = "Downloading…";
+                btn.textContent = t("downloading");
                 btn.disabled = true;
                 const resp = await fetch(video.src);
                 const blob = await resp.blob();
@@ -2375,11 +2883,11 @@
                 a.download = `twitch-clip-${clipSlug}.mp4`;
                 a.click();
                 URL.revokeObjectURL(url);
-                btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M10 2v10.585l3.293-3.292 1.414 1.414L10 15.414l-4.707-4.707 1.414-1.414L10 12.585V2zm-7 14h14v2H3v-2z"/></svg> Download`;
+                btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M10 2v10.585l3.293-3.292 1.414 1.414L10 15.414l-4.707-4.707 1.414-1.414L10 12.585V2zm-7 14h14v2H3v-2z"/></svg> ${t("download")}`;
                 btn.disabled = false;
             } catch (e) {
                 console.error("[Twitch Plus] Clip download failed:", e);
-                btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M10 2v10.585l3.293-3.292 1.414 1.414L10 15.414l-4.707-4.707 1.414-1.414L10 12.585V2zm-7 14h14v2H3v-2z"/></svg> Download`;
+                btn.innerHTML = `<svg viewBox="0 0 20 20"><path d="M10 2v10.585l3.293-3.292 1.414 1.414L10 15.414l-4.707-4.707 1.414-1.414L10 12.585V2zm-7 14h14v2H3v-2z"/></svg> ${t("download")}`;
                 btn.disabled = false;
             }
         });
@@ -2736,27 +3244,25 @@
                 vodClockEl = document.createElement("div");
                 vodClockEl.className = "tp-vod-clock";
                 vodClockEl.innerHTML = `<svg viewBox="0 0 16 16"><path d="M8 0a8 8 0 1 0 0 16A8 8 0 0 0 8 0zm0 14.5a6.5 6.5 0 1 1 0-13 6.5 6.5 0 0 1 0 13zm.75-10v4l3 1.75-.75 1.3L7.25 9.5V4.5h1.5z"/></svg><span class="tp-vod-clock-time"></span>`;
-                vodClockEl.title = "Original broadcast time";
+                vodClockEl.title = t("vod_clock_tooltip");
 
-                // Place in the video info area below the player, near share/like buttons
-                const infoArea = document.querySelector(
-                    "[data-a-target='share-button'], " +
-                    "button[aria-label='Share'], " +
-                    "[data-a-target='video-info-share-button']"
-                );
-                if (infoArea) {
-                    // Insert before the share button's container
-                    const shareParent = infoArea.closest("[class*='Layout']") || infoArea.parentElement;
-                    if (shareParent?.parentElement) {
-                        shareParent.parentElement.insertBefore(vodClockEl, shareParent);
-                    } else {
-                        shareParent?.before(vodClockEl);
-                    }
+                // Place in the player controls bar (right side, before settings)
+                const rightControls = document.querySelector(".player-controls__right-control-group");
+                if (rightControls) {
+                    // Insert at the beginning of right controls (before fullscreen/settings)
+                    rightControls.prepend(vodClockEl);
                 } else {
-                    // Fallback: place in player controls
-                    const controls = document.querySelector(".player-controls__right-control-group");
-                    if (controls) {
-                        controls.prepend(vodClockEl);
+                    // Fallback: place below the video metadata area
+                    const metadataBar = document.querySelector(
+                        "[data-a-target='stream-game-link']," +
+                        ".channel-info-content," +
+                        "[class*='metadata-layout']"
+                    );
+                    if (metadataBar) {
+                        const parent = metadataBar.closest("[class*='Layout']") || metadataBar.parentElement;
+                        if (parent) {
+                            parent.appendChild(vodClockEl);
+                        }
                     } else {
                         // Last resort: place below the player
                         const playerWrapper = document.querySelector(
@@ -2910,31 +3416,8 @@
         const btn = document.createElement("button");
         btn.className = "tp-settings-btn";
         btn.setAttribute("aria-label", "Twitch Plus");
-        btn.title = "Twitch Plus Settings";
-        btn.innerHTML = `<svg viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
-            <!-- Low-poly raven matching app icon -->
-            <!-- Body -->
-            <path d="M4 13.5Q3.2 11.5 4.5 9.5L7 8L9.5 7.5L12 8.5L13.5 10Q13.8 12 12.5 13.5L10 14.5L7 15Z" fill="#9147ff"/>
-            <!-- Wing facets -->
-            <path d="M5 11L7 8.5L9 9L10 10.5L9 12.5L6.5 13.5Z" fill="#7B2FBE"/>
-            <path d="M7 8.5L9.5 7.8L10.5 9L9 9Z" fill="#A366FF"/>
-            <!-- Head -->
-            <circle cx="13.5" cy="6.5" r="3" fill="#9147ff"/>
-            <!-- Head facets -->
-            <path d="M12 6L13.5 4L15.5 5.5L14.5 7.5L12.5 7.5Z" fill="#A366FF" opacity="0.6"/>
-            <!-- Eye -->
-            <ellipse cx="14.5" cy="6.2" rx="1" ry="1.1" fill="#fff"/>
-            <ellipse cx="14.7" cy="6.1" rx="0.5" ry="0.6" fill="#18181b"/>
-            <circle cx="14.9" cy="5.9" r="0.2" fill="#fff"/>
-            <!-- Beak -->
-            <path d="M16.2 6.5L18.5 6.8L16.3 7.8Z" fill="#7B2FBE"/>
-            <!-- Tail -->
-            <path d="M3 13Q1.8 14 1.5 15.5Q2.5 14.5 3.2 14.2L4 13Z" fill="#7B2FBE" opacity="0.85"/>
-            <path d="M3.5 13.5Q2.5 15 2 16Q3 15 3.5 14.5L4.2 13.5Z" fill="#5C1F99" opacity="0.8"/>
-            <!-- Feet -->
-            <path d="M7.5 14.8L7 16.5L6.2 17.2M7 16.5L7.5 17.2" fill="none" stroke="#7B2FBE" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
-            <path d="M10 14.5L9.5 16.2L8.7 16.9M9.5 16.2L10 16.9" fill="none" stroke="#7B2FBE" stroke-width="0.7" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>`;
+        btn.title = t("settings_btn_title");
+        btn.innerHTML = `<span class="tp-settings-emoji">\u{1F426}\u{200D}\u{2B1B}</span>`;
 
         btn.addEventListener("click", (e) => {
             e.stopPropagation();
@@ -3034,7 +3517,7 @@
         header.appendChild(logo);
 
         const title = document.createElement("h3");
-        title.textContent = "Twitch Plus";
+        title.textContent = t("settings_title");
         header.appendChild(title);
 
         // Master toggle in header
@@ -3067,11 +3550,11 @@
 
         // ── Category definitions ──
         const categories = [
-            { id: "emotes", label: "Emotes", icon: CATEGORY_ICONS.emotes },
-            { id: "chat", label: "Chat", icon: CATEGORY_ICONS.chat },
-            { id: "player", label: "Player", icon: CATEGORY_ICONS.player },
-            { id: "auto", label: "Auto", icon: CATEGORY_ICONS.auto },
-            { id: "more", label: "More", icon: CATEGORY_ICONS.more },
+            { id: "emotes", label: t("cat_emotes"), icon: CATEGORY_ICONS.emotes },
+            { id: "chat", label: t("cat_chat"), icon: CATEGORY_ICONS.chat },
+            { id: "player", label: t("cat_player"), icon: CATEGORY_ICONS.player },
+            { id: "auto", label: t("cat_auto"), icon: CATEGORY_ICONS.auto },
+            { id: "more", label: t("cat_more"), icon: CATEGORY_ICONS.more },
         ];
 
         // ── Sidebar nav ──
@@ -3110,26 +3593,26 @@
         const emotesSection = document.createElement("div");
         emotesSection.className = "tp-category-content tp-category-visible";
 
-        emotesSection.appendChild(createSectionTitle("Emote Providers"));
+        emotesSection.appendChild(createSectionTitle(t("sec_emote_providers")));
         const emotesCard = document.createElement("div");
         emotesCard.className = "tp-setting-card";
-        emotesCard.appendChild(createToggleRow("BetterTTV", "bttvEmotes", settings.bttvEmotes !== false, "Load BetterTTV emotes in chat"));
-        emotesCard.appendChild(createToggleRow("FrankerFaceZ", "ffzEmotes", settings.ffzEmotes !== false, "Load FrankerFaceZ emotes in chat"));
-        emotesCard.appendChild(createToggleRow("7TV", "sevenTvEmotes", settings.sevenTvEmotes !== false, "Load 7TV emotes in chat"));
+        emotesCard.appendChild(createToggleRow(t("bttv"), "bttvEmotes", settings.bttvEmotes !== false, t("bttv_desc")));
+        emotesCard.appendChild(createToggleRow(t("ffz"), "ffzEmotes", settings.ffzEmotes !== false, t("ffz_desc")));
+        emotesCard.appendChild(createToggleRow(t("stv"), "sevenTvEmotes", settings.sevenTvEmotes !== false, t("stv_desc")));
         emotesSection.appendChild(emotesCard);
 
-        emotesSection.appendChild(createSectionTitle("7TV Advanced"));
+        emotesSection.appendChild(createSectionTitle(t("sec_7tv_advanced")));
         const sevenTvCard = document.createElement("div");
         sevenTvCard.className = "tp-setting-card";
-        sevenTvCard.appendChild(createToggleRow("Live Emote Updates", "sevenTvEventApi", settings.sevenTvEventApi !== false, "Sync emote changes in real time via 7TV EventAPI"));
-        sevenTvCard.appendChild(createToggleRow("Cosmetics", "sevenTvCosmetics", settings.sevenTvCosmetics !== false, "Show 7TV badges and username paints"));
+        sevenTvCard.appendChild(createToggleRow(t("stv_events"), "sevenTvEventApi", settings.sevenTvEventApi !== false, t("stv_events_desc")));
+        sevenTvCard.appendChild(createToggleRow(t("stv_cosmetics"), "sevenTvCosmetics", settings.sevenTvCosmetics !== false, t("stv_cosmetics_desc")));
         emotesSection.appendChild(sevenTvCard);
 
-        emotesSection.appendChild(createSectionTitle("Emote Tools"));
+        emotesSection.appendChild(createSectionTitle(t("sec_emote_tools")));
         const emoteToolsCard = document.createElement("div");
         emoteToolsCard.className = "tp-setting-card";
-        emoteToolsCard.appendChild(createToggleRow("Emote Menu", "emoteMenuEnabled", settings.emoteMenuEnabled !== false, "Show a picker button next to chat input for browsing emotes"));
-        emoteToolsCard.appendChild(createToggleRow("Animated Emotes", "animatedEmotes", settings.animatedEmotes !== false, "Play animated emotes (GIF/WebP). Disable for static frames only"));
+        emoteToolsCard.appendChild(createToggleRow(t("emote_menu"), "emoteMenuEnabled", settings.emoteMenuEnabled !== false, t("emote_menu_desc")));
+        emoteToolsCard.appendChild(createToggleRow(t("animated_emotes"), "animatedEmotes", settings.animatedEmotes !== false, t("animated_emotes_desc")));
         emotesSection.appendChild(emoteToolsCard);
 
         content.appendChild(emotesSection);
@@ -3139,64 +3622,65 @@
         const chatSection = document.createElement("div");
         chatSection.className = "tp-category-content";
 
-        chatSection.appendChild(createSectionTitle("Appearance"));
+        chatSection.appendChild(createSectionTitle(t("sec_appearance")));
         const chatAppCard = document.createElement("div");
         chatAppCard.className = "tp-setting-card";
-        chatAppCard.appendChild(createToggleRow("Timestamps", "chatTimestamps", !!settings.chatTimestamps, "Show HH:MM before each message"));
-        chatAppCard.appendChild(createToggleRow("Alternating Backgrounds", "splitChat", settings.splitChat !== false, "Alternate clear/dark rows for readability"));
+        chatAppCard.appendChild(createToggleRow(t("timestamps"), "chatTimestamps", !!settings.chatTimestamps, t("timestamps_desc")));
+        chatAppCard.appendChild(createToggleRow(t("split_chat"), "splitChat", settings.splitChat !== false, t("split_chat_desc")));
         chatAppCard.appendChild(createSplitChatThemeSelector());
-        chatAppCard.appendChild(createToggleRow("User Colors", "alternatingUsers", settings.alternatingUsers !== false, "Color-code message backgrounds per user"));
-        chatAppCard.appendChild(createToggleRow("Readable Colors", "readableColors", !!settings.readableColors, "Adjust dark usernames for visibility"));
-        chatAppCard.appendChild(createToggleRow("First-Time Chatter Glow", "firstTimeChatterHighlight", settings.firstTimeChatterHighlight !== false, "Highlight messages from first-time chatters"));
-        chatAppCard.appendChild(createToggleRow("Spoiler Tags", "spoilerHiding", settings.spoilerHiding !== false, "Hide ||spoiler|| text until clicked"));
-        chatAppCard.appendChild(createSelectRow("Chat Font", "chatFontFamily", [
-            { label: "Default", value: "" },
-            { label: "System UI", value: "system-ui, -apple-system, sans-serif" },
-            { label: "Monospace", value: "'SF Mono', 'Menlo', 'Consolas', monospace" },
-            { label: "Inter", value: "'Inter', sans-serif" },
-            { label: "Comic Neue", value: "'Comic Neue', cursive" },
+        chatAppCard.appendChild(createToggleRow(t("user_colors"), "alternatingUsers", settings.alternatingUsers !== false, t("user_colors_desc")));
+        chatAppCard.appendChild(createToggleRow(t("readable_colors"), "readableColors", !!settings.readableColors, t("readable_colors_desc")));
+        chatAppCard.appendChild(createToggleRow(t("first_chatter"), "firstTimeChatterHighlight", settings.firstTimeChatterHighlight !== false, t("first_chatter_desc")));
+        chatAppCard.appendChild(createToggleRow(t("spoiler_tags"), "spoilerHiding", settings.spoilerHiding !== false, t("spoiler_tags_desc")));
+        chatAppCard.appendChild(createSelectRow(t("chat_font"), "chatFontFamily", [
+            { label: t("font_default"), value: "" },
+            { label: t("font_system"), value: "system-ui, -apple-system, sans-serif" },
+            { label: t("font_mono"), value: "'SF Mono', 'Menlo', 'Consolas', monospace" },
+            { label: t("font_inter"), value: "'Inter', sans-serif" },
+            { label: t("font_comic"), value: "'Comic Neue', cursive" },
         ], settings.chatFontFamily || ""));
-        chatAppCard.appendChild(createNumberInputRow("Font Size", "chatFontSize", 0, 24, settings.chatFontSize || 0, "0 = default"));
+        chatAppCard.appendChild(createNumberInputRow(t("font_size"), "chatFontSize", 0, 24, settings.chatFontSize || 0, t("font_size_ph")));
         chatSection.appendChild(chatAppCard);
 
-        chatSection.appendChild(createSectionTitle("Behavior"));
+        chatSection.appendChild(createSectionTitle(t("sec_behavior")));
         const chatBehCard = document.createElement("div");
         chatBehCard.className = "tp-setting-card";
-        chatBehCard.appendChild(createToggleRow("Show Deleted Messages", "showDeletedMessages", !!settings.showDeletedMessages, "Keep deleted messages visible with strikethrough"));
-        chatBehCard.appendChild(createToggleRow("Mention Highlights", "mentionHighlights", settings.mentionHighlights !== false, "Highlight messages that mention your name"));
-        chatBehCard.appendChild(createToggleRow("Emote Tab-Completion", "emoteTabCompletion", settings.emoteTabCompletion !== false, "Press Tab to autocomplete emote names"));
-        chatBehCard.appendChild(createToggleRow("Lurk Mode", "lurkMode", !!settings.lurkMode, "Grey out chat input to avoid accidental messages"));
+        chatBehCard.appendChild(createToggleRow(t("deleted_msgs"), "showDeletedMessages", !!settings.showDeletedMessages, t("deleted_msgs_desc")));
+        chatBehCard.appendChild(createToggleRow(t("mention_hl"), "mentionHighlights", settings.mentionHighlights !== false, t("mention_hl_desc")));
+        chatBehCard.appendChild(createToggleRow(t("tab_complete"), "emoteTabCompletion", settings.emoteTabCompletion !== false, t("tab_complete_desc")));
+        chatBehCard.appendChild(createToggleRow(t("lurk"), "lurkMode", !!settings.lurkMode, t("lurk_desc")));
+        chatBehCard.appendChild(createToggleRow(t("anon_chat"), "anonChat", !!settings.anonChat, t("anon_chat_desc")));
         chatSection.appendChild(chatBehCard);
 
-        chatSection.appendChild(createSectionTitle("User Info"));
+        chatSection.appendChild(createSectionTitle(t("sec_user_info")));
         const userInfoCard = document.createElement("div");
         userInfoCard.className = "tp-setting-card";
-        userInfoCard.appendChild(createToggleRow("Pronouns", "showPronouns", !!settings.showPronouns, "Show user pronouns next to display names (via pronouns.alejo.io)"));
-        userInfoCard.appendChild(createToggleRow("Enhanced User Cards", "enhancedUserCards", settings.enhancedUserCards !== false, "Show account age and follow date on user card popups"));
+        userInfoCard.appendChild(createToggleRow(t("pronouns"), "showPronouns", !!settings.showPronouns, t("pronouns_desc")));
+        userInfoCard.appendChild(createToggleRow(t("user_cards"), "enhancedUserCards", settings.enhancedUserCards !== false, t("user_cards_desc")));
         chatSection.appendChild(userInfoCard);
 
-        chatSection.appendChild(createSectionTitle("Chat Tools"));
+        chatSection.appendChild(createSectionTitle(t("sec_chat_tools")));
         const chatToolsCard = document.createElement("div");
         chatToolsCard.className = "tp-setting-card";
-        chatToolsCard.appendChild(createToggleRow("Slow Mode Countdown", "slowModeCountdown", settings.slowModeCountdown !== false, "Show a countdown timer on the send button during slow mode"));
-        chatToolsCard.appendChild(createToggleRow("Chat Search", "chatSearch", !!settings.chatSearch, "Enable Ctrl+F search overlay for chat messages"));
-        chatToolsCard.appendChild(createToggleRow("YouTube Previews", "youtubePreview", settings.youtubePreview !== false, "Show thumbnail and title when hovering YouTube links in chat"));
-        chatToolsCard.appendChild(createToggleRow("Image Previews", "chatImagePreview", settings.chatImagePreview !== false, "Show inline image previews for image URLs posted in chat"));
+        chatToolsCard.appendChild(createToggleRow(t("slow_mode"), "slowModeCountdown", settings.slowModeCountdown !== false, t("slow_mode_desc")));
+        chatToolsCard.appendChild(createToggleRow(t("chat_search"), "chatSearch", !!settings.chatSearch, t("chat_search_desc")));
+        chatToolsCard.appendChild(createToggleRow(t("yt_preview"), "youtubePreview", settings.youtubePreview !== false, t("yt_preview_desc")));
+        chatToolsCard.appendChild(createToggleRow(t("img_preview"), "chatImagePreview", settings.chatImagePreview !== false, t("img_preview_desc")));
         chatSection.appendChild(chatToolsCard);
 
-        chatSection.appendChild(createSectionTitle("Spam Filtering"));
+        chatSection.appendChild(createSectionTitle(t("sec_spam")));
         const spamCard = document.createElement("div");
         spamCard.className = "tp-setting-card";
-        spamCard.appendChild(createToggleRow("Spam Filter", "spamFilter", !!settings.spamFilter, "Hide repeated messages that exceed the threshold"));
-        spamCard.appendChild(createNumberInputRow("Repeat Threshold", "spamThreshold", 2, 50, settings.spamThreshold || 3, "3"));
-        spamCard.appendChild(createNumberInputRow("Time Window (sec)", "spamWindow", 5, 120, settings.spamWindow || 10, "10"));
-        spamCard.appendChild(createToggleRow("Hide Bot Messages", "hideBots", !!settings.hideBots, "Hide messages from known bots (Nightbot, StreamElements, etc.)"));
+        spamCard.appendChild(createToggleRow(t("spam_filter"), "spamFilter", !!settings.spamFilter, t("spam_filter_desc")));
+        spamCard.appendChild(createNumberInputRow(t("spam_threshold"), "spamThreshold", 2, 50, settings.spamThreshold || 3, "3"));
+        spamCard.appendChild(createNumberInputRow(t("spam_window"), "spamWindow", 5, 120, settings.spamWindow || 10, "10"));
+        spamCard.appendChild(createToggleRow(t("hide_bots"), "hideBots", !!settings.hideBots, t("hide_bots_desc")));
         chatSection.appendChild(spamCard);
 
-        chatSection.appendChild(createSectionTitle("Filters"));
-        chatSection.appendChild(createKeywordEditor("Highlight Keywords", "highlightKeywords", settings.highlightKeywords || []));
-        chatSection.appendChild(createKeywordEditor("Hidden Keywords", "hiddenKeywords", settings.hiddenKeywords || []));
-        chatSection.appendChild(createNicknameEditor("Custom Nicknames", "customNicknames", settings.customNicknames || {}));
+        chatSection.appendChild(createSectionTitle(t("sec_filters")));
+        chatSection.appendChild(createKeywordEditor(t("hl_keywords"), "highlightKeywords", settings.highlightKeywords || []));
+        chatSection.appendChild(createKeywordEditor(t("hidden_keywords"), "hiddenKeywords", settings.hiddenKeywords || []));
+        chatSection.appendChild(createNicknameEditor(t("custom_nicks"), "customNicknames", settings.customNicknames || {}));
 
         content.appendChild(chatSection);
         categoryContents["chat"] = chatSection;
@@ -3205,36 +3689,38 @@
         const playerSection = document.createElement("div");
         playerSection.className = "tp-category-content";
 
-        playerSection.appendChild(createSectionTitle("Player Controls"));
+        playerSection.appendChild(createSectionTitle(t("sec_player_controls")));
         const playerCtrlCard = document.createElement("div");
         playerCtrlCard.className = "tp-setting-card";
-        playerCtrlCard.appendChild(createToggleRow("Picture-in-Picture Button", "pipButton", settings.pipButton !== false, "Add a PiP button to the player controls bar"));
-        playerCtrlCard.appendChild(createToggleRow("Screenshot Button", "screenshotButton", settings.screenshotButton !== false, "Add a screenshot capture button to the player controls bar"));
-        playerCtrlCard.appendChild(createToggleRow("Clip Download", "clipDownload", settings.clipDownload !== false, "Add a download button on clip pages"));
-        playerCtrlCard.appendChild(createToggleRow("VOD Real-Time Clock", "vodRealTimeClock", settings.vodRealTimeClock !== false, "Show the original broadcast time when watching VODs"));
+        playerCtrlCard.appendChild(createToggleRow(t("pip_btn"), "pipButton", settings.pipButton !== false, t("pip_btn_desc")));
+        playerCtrlCard.appendChild(createToggleRow(t("screenshot_btn"), "screenshotButton", settings.screenshotButton !== false, t("screenshot_btn_desc")));
+        playerCtrlCard.appendChild(createToggleRow(t("clip_dl"), "clipDownload", settings.clipDownload !== false, t("clip_dl_desc")));
+        playerCtrlCard.appendChild(createToggleRow(t("vod_clock"), "vodRealTimeClock", settings.vodRealTimeClock !== false, t("vod_clock_desc")));
         playerSection.appendChild(playerCtrlCard);
 
-        playerSection.appendChild(createSectionTitle("Audio & Video"));
+        playerSection.appendChild(createSectionTitle(t("sec_audio_video")));
         const avCard = document.createElement("div");
         avCard.className = "tp-setting-card";
-        avCard.appendChild(createSelectRow("Video Quality", "autoQuality", [
-            { label: "Default", value: "" },
+        avCard.appendChild(createSelectRow(t("quality"), "autoQuality", [
+            { label: t("quality_auto"), value: "" },
             { label: "160p", value: "160p" },
             { label: "360p", value: "360p" },
             { label: "480p", value: "480p" },
             { label: "720p", value: "720p" },
             { label: "1080p", value: "1080p" },
-            { label: "Source", value: "chunked" },
+            { label: "1440p (2K)", value: "1440p" },
+            { label: t("quality_source"), value: "chunked" },
         ], settings.autoQuality || ""));
-        avCard.appendChild(createToggleRow("Disable Autoplay", "disableAutoplay", !!settings.disableAutoplay, "Stop videos from auto-playing on page load"));
+        avCard.appendChild(createToggleRow(t("autoplay_off"), "disableAutoplay", !!settings.disableAutoplay, t("autoplay_off_desc")));
+        avCard.appendChild(createToggleRow(t("auto_reload_player"), "autoReloadPlayer", settings.autoReloadPlayer !== false, t("auto_reload_player_desc")));
         playerSection.appendChild(avCard);
 
-        playerSection.appendChild(createSectionTitle("Theater Mode"));
+        playerSection.appendChild(createSectionTitle(t("sec_theater")));
         const theaterCard = document.createElement("div");
         theaterCard.className = "tp-setting-card";
-        theaterCard.appendChild(createToggleRow("Auto Theater Mode", "autoTheaterMode", !!settings.autoTheaterMode, "Automatically enter theater mode on channel pages"));
-        theaterCard.appendChild(createToggleRow("OLED Black Background", "theaterOledBlack", !!settings.theaterOledBlack, "Pure black background for OLED screens"));
-        theaterCard.appendChild(createToggleRow("Transparent Chat Overlay", "theaterTransparentChat", !!settings.theaterTransparentChat, "Chat floats over the video with a blurred backdrop"));
+        theaterCard.appendChild(createToggleRow(t("auto_theater"), "autoTheaterMode", !!settings.autoTheaterMode, t("auto_theater_desc")));
+        theaterCard.appendChild(createToggleRow(t("oled_black"), "theaterOledBlack", !!settings.theaterOledBlack, t("oled_black_desc")));
+        theaterCard.appendChild(createToggleRow(t("transparent_chat"), "theaterTransparentChat", !!settings.theaterTransparentChat, t("transparent_chat_desc")));
         playerSection.appendChild(theaterCard);
 
         content.appendChild(playerSection);
@@ -3244,12 +3730,13 @@
         const autoSection = document.createElement("div");
         autoSection.className = "tp-category-content";
 
-        autoSection.appendChild(createSectionTitle("Auto-Claim"));
+        autoSection.appendChild(createSectionTitle(t("sec_auto_claim")));
         const autoCard = document.createElement("div");
         autoCard.className = "tp-setting-card";
-        autoCard.appendChild(createToggleRow("Channel Points", "autoClaimPoints", settings.autoClaimPoints !== false, "Automatically click the bonus channel points button"));
-        autoCard.appendChild(createToggleRow("Drops", "autoClaimDrops", settings.autoClaimDrops !== false, "Automatically claim available Twitch Drops"));
-        autoCard.appendChild(createToggleRow("Moments", "autoClaimMoments", !!settings.autoClaimMoments, "Automatically claim streamer Moments"));
+        autoCard.appendChild(createToggleRow(t("claim_points"), "autoClaimPoints", settings.autoClaimPoints !== false, t("claim_points_desc")));
+        autoCard.appendChild(createToggleRow(t("claim_drops"), "autoClaimDrops", settings.autoClaimDrops !== false, t("claim_drops_desc")));
+        autoCard.appendChild(createToggleRow(t("claim_moments"), "autoClaimMoments", !!settings.autoClaimMoments, t("claim_moments_desc")));
+        autoCard.appendChild(createToggleRow(t("claim_streaks"), "autoClaimStreaks", settings.autoClaimStreaks !== false, t("claim_streaks_desc")));
         autoSection.appendChild(autoCard);
 
         content.appendChild(autoSection);
@@ -3259,44 +3746,70 @@
         const moreSection = document.createElement("div");
         moreSection.className = "tp-category-content";
 
-        moreSection.appendChild(createSectionTitle("Moderation"));
+        moreSection.appendChild(createSectionTitle(t("sec_language")));
+        const langCard = document.createElement("div");
+        langCard.className = "tp-setting-card";
+        langCard.appendChild(createSelectRow(t("language_label"), "language", [
+            { label: "\uD83C\uDF10 " + t("language_auto"), value: "auto" },
+            { label: "\uD83C\uDDEC\uD83C\uDDE7 English", value: "en" },
+            { label: "\uD83C\uDDEA\uD83C\uDDF8 Español", value: "es" },
+            { label: "\uD83C\uDDEB\uD83C\uDDF7 Français", value: "fr" },
+            { label: "\uD83C\uDDE9\uD83C\uDDEA Deutsch", value: "de" },
+            { label: "\uD83C\uDDEF\uD83C\uDDF5 日本語", value: "ja" },
+            { label: "\uD83C\uDDF0\uD83C\uDDF7 한국어", value: "ko" },
+            { label: "\uD83C\uDDE7\uD83C\uDDF7 Português", value: "pt" },
+            { label: "\uD83C\uDDE8\uD83C\uDDF3 中文 (简体)", value: "zh_CN" },
+            { label: "\uD83C\uDDF9\uD83C\uDDFC 中文 (繁體)", value: "zh_TW" },
+            { label: "\uD83C\uDDEE\uD83C\uDDF9 Italiano", value: "it" },
+            { label: "\uD83C\uDDF7\uD83C\uDDFA Русский", value: "ru" },
+            { label: "\uD83C\uDDF3\uD83C\uDDF1 Nederlands", value: "nl" },
+            { label: "\uD83C\uDDF9\uD83C\uDDF7 Türkçe", value: "tr" },
+            { label: "\uD83C\uDDF8\uD83C\uDDE6 العربية", value: "ar" },
+            { label: "\uD83C\uDDF9\uD83C\uDDED ไทย", value: "th" },
+            { label: "\uD83C\uDDF5\uD83C\uDDF1 Polski", value: "pl" },
+            { label: "\uD83C\uDDF8\uD83C\uDDEA Svenska", value: "sv" },
+            { label: "\uD83C\uDDEE\uD83C\uDDE9 Bahasa Indonesia", value: "id" },
+        ], settings.language || "auto"));
+        moreSection.appendChild(langCard);
+
+        moreSection.appendChild(createSectionTitle(t("sec_moderation")));
         const modCard = document.createElement("div");
         modCard.className = "tp-setting-card";
-        modCard.appendChild(createToggleRow("Quick Timeout Buttons", "modToolsEnabled", !!settings.modToolsEnabled, "Show 1m/10m/1h timeout buttons on hover"));
+        modCard.appendChild(createToggleRow(t("mod_tools"), "modToolsEnabled", !!settings.modToolsEnabled, t("mod_tools_desc")));
         moreSection.appendChild(modCard);
 
-        moreSection.appendChild(createSectionTitle("Interface"));
+        moreSection.appendChild(createSectionTitle(t("sec_interface")));
         const uiCard = document.createElement("div");
         uiCard.className = "tp-setting-card";
-        uiCard.appendChild(createToggleRow("Hide UI Clutter", "hideClutter", !!settings.hideClutter, "Hide bits, hype chat, prime promos, streaks, and more"));
+        uiCard.appendChild(createToggleRow(t("hide_clutter"), "hideClutter", !!settings.hideClutter, t("hide_clutter_desc")));
         moreSection.appendChild(uiCard);
 
-        moreSection.appendChild(createSectionTitle("Sidebar"));
+        moreSection.appendChild(createSectionTitle(t("sec_sidebar")));
         const sidebarCard = document.createElement("div");
         sidebarCard.className = "tp-setting-card";
-        sidebarCard.appendChild(createToggleRow("Auto-Expand Followed", "autoExpandFollowed", settings.autoExpandFollowed !== false, "Automatically click \"Show More\" to expand the followed channels list"));
-        sidebarCard.appendChild(createToggleRow("Channel Previews", "channelPreviews", settings.channelPreviews !== false, "Show live thumbnail preview when hovering sidebar channels"));
+        sidebarCard.appendChild(createToggleRow(t("auto_expand"), "autoExpandFollowed", settings.autoExpandFollowed !== false, t("auto_expand_desc")));
+        sidebarCard.appendChild(createToggleRow(t("chan_previews"), "channelPreviews", settings.channelPreviews !== false, t("chan_previews_desc")));
         moreSection.appendChild(sidebarCard);
 
-        moreSection.appendChild(createSectionTitle("Extras"));
+        moreSection.appendChild(createSectionTitle(t("sec_extras")));
         const extrasCard = document.createElement("div");
         extrasCard.className = "tp-setting-card";
-        extrasCard.appendChild(createToggleRow("Move Chat to Left", "chatOnLeft", !!settings.chatOnLeft, "Position chat on the left side of the player"));
-        extrasCard.appendChild(createToggleRow("Watch Time Tracker", "watchTimeTracker", !!settings.watchTimeTracker, "Track how long you watch each channel this session"));
+        extrasCard.appendChild(createToggleRow(t("chat_left"), "chatOnLeft", !!settings.chatOnLeft, t("chat_left_desc")));
+        extrasCard.appendChild(createToggleRow(t("watch_time"), "watchTimeTracker", !!settings.watchTimeTracker, t("watch_time_desc")));
         moreSection.appendChild(extrasCard);
 
-        moreSection.appendChild(createSectionTitle("Content Filters"));
-        moreSection.appendChild(createKeywordEditor("Unwanted Games/Channels", "unwantedFilter", settings.unwantedFilter || []));
+        moreSection.appendChild(createSectionTitle(t("sec_content_filters")));
+        moreSection.appendChild(createKeywordEditor(t("unwanted"), "unwantedFilter", settings.unwantedFilter || []));
 
 
 
         // Debug section
-        moreSection.appendChild(createSectionTitle("Debug"));
+        moreSection.appendChild(createSectionTitle(t("sec_debug")));
         const debugCard = document.createElement("div");
         debugCard.className = "tp-setting-card";
         const debugBtn = document.createElement("button");
         debugBtn.className = "tp-debug-btn";
-        debugBtn.textContent = "Show Debug Overlay";
+        debugBtn.textContent = t("debug_btn");
         debugBtn.addEventListener("click", () => toggleDebugOverlay());
         debugCard.appendChild(debugBtn);
         moreSection.appendChild(debugCard);
@@ -3310,7 +3823,7 @@
         // ── Footer ──
         const footer = document.createElement("div");
         footer.className = "tp-panel-footer";
-        footer.innerHTML = `<span>Twitch Plus v3.1.3</span>`;
+        footer.innerHTML = `<span>${t("settings_footer").replace("{version}", "3.1.3")}</span>`;
         panel.appendChild(footer);
 
         // Apply disabled state to non-master toggles if extension is off
@@ -3338,7 +3851,7 @@
         debugOverlayEl.className = "tp-debug-overlay";
         debugOverlayEl.innerHTML = `
             <div class="tp-debug-header">
-                <span>Twitch Plus Debug</span>
+                <span>${t("debug_title")}</span>
                 <button class="tp-debug-close">&times;</button>
             </div>
             <div class="tp-debug-content"></div>
@@ -3525,12 +4038,14 @@
         grid.className = "tp-theme-grid";
 
         const currentTheme = settings.splitChatTheme || "default";
+        const themeI18nKeys = { default: "theme_twitch_dark", midnight: "theme_midnight", ocean: "theme_ocean", forest: "theme_forest", sunset: "theme_sunset", neon: "theme_neon", rainbow: "theme_rainbow", usa: "theme_usa", candy: "theme_candy", hacker: "theme_hacker" };
 
         Object.entries(SPLIT_CHAT_PRESETS).forEach(([key, preset]) => {
             const btn = document.createElement("button");
             btn.className = "tp-theme-btn" + (key === currentTheme ? " tp-theme-active" : "");
             btn.dataset.theme = key;
-            btn.title = preset.label;
+            const themeLabel = themeI18nKeys[key] ? t(themeI18nKeys[key]) : preset.label;
+            btn.title = themeLabel;
 
             // Color preview swatch
             const swatch = document.createElement("div");
@@ -3545,7 +4060,7 @@
 
             const label = document.createElement("span");
             label.className = "tp-theme-label";
-            label.textContent = preset.label;
+            label.textContent = themeLabel;
             btn.appendChild(label);
 
             btn.addEventListener("click", () => {
@@ -3564,7 +4079,7 @@
         const customBtn = document.createElement("button");
         customBtn.className = "tp-theme-btn" + (currentTheme === "custom" ? " tp-theme-active" : "");
         customBtn.dataset.theme = "custom";
-        customBtn.title = "Custom Colors";
+        customBtn.title = t("theme_custom_title");
 
         const customSwatch = document.createElement("div");
         customSwatch.className = "tp-theme-swatch tp-theme-swatch-custom";
@@ -3574,7 +4089,7 @@
 
         const customLabel = document.createElement("span");
         customLabel.className = "tp-theme-label";
-        customLabel.textContent = "Custom";
+        customLabel.textContent = t("theme_custom");
         customBtn.appendChild(customLabel);
 
         customBtn.addEventListener("click", () => {
@@ -3606,7 +4121,7 @@
 
         const label = document.createElement("div");
         label.className = "tp-custom-colors-label";
-        label.textContent = "Custom Colors (min 2)";
+        label.textContent = t("theme_custom_label");
         editor.appendChild(label);
 
         const swatchRow = document.createElement("div");
@@ -3664,7 +4179,7 @@
                 const addBtn = document.createElement("button");
                 addBtn.className = "tp-custom-swatch-add";
                 addBtn.textContent = "+";
-                addBtn.title = "Add color";
+                addBtn.title = t("add_color");
                 addBtn.addEventListener("click", () => {
                     customColors.push("rgba(40, 40, 50, 0.5)");
                     renderSwatches();
@@ -3721,7 +4236,7 @@
         const input = document.createElement("input");
         input.type = "text";
         input.className = "tp-keyword-input";
-        input.placeholder = "Add keyword…";
+        input.placeholder = t("keyword_ph");
 
         const addBtn = document.createElement("button");
         addBtn.className = "tp-keyword-add-btn";
@@ -3793,13 +4308,13 @@
         const userInput = document.createElement("input");
         userInput.type = "text";
         userInput.className = "tp-keyword-input";
-        userInput.placeholder = "Username";
+        userInput.placeholder = t("nick_user_ph");
         userInput.style.flex = "1";
 
         const nickInput = document.createElement("input");
         nickInput.type = "text";
         nickInput.className = "tp-keyword-input";
-        nickInput.placeholder = "Nickname";
+        nickInput.placeholder = t("nick_name_ph");
         nickInput.style.flex = "1";
 
         const addBtn = document.createElement("button");
@@ -3920,21 +4435,25 @@
             case "splitChatCustomColors":
                 if (container) {
                     if (settings.splitChat !== false) {
+                        container.classList.add("tp-split-chat-active");
                         // Apply alternating backgrounds to existing messages
                         const colors = getSplitChatColors();
-                        altRowIndex = 0;
                         const msgs = container.querySelectorAll(CHAT_LINE_SELECTOR);
                         console.log(`[Twitch Plus] Split chat theme applied: ${settings.splitChatTheme || "default"} (${colors.length} colors, ${msgs.length} msgs)`);
+                        let idx = 0;
                         msgs.forEach((msg) => {
-                            msg.style.backgroundColor = colors[altRowIndex % colors.length];
-                            altRowIndex++;
+                            const ci = idx % colors.length;
+                            msg.style.backgroundColor = colors[ci];
+                            msg.dataset.tpColorIdx = String(ci);
+                            idx++;
                         });
                     } else {
+                        container.classList.remove("tp-split-chat-active");
                         // Remove all alternating backgrounds
                         container.querySelectorAll(CHAT_LINE_SELECTOR).forEach((el) => {
                             el.style.backgroundColor = "";
+                            delete el.dataset.tpColorIdx;
                         });
-                        altRowIndex = 0;
                     }
                 }
                 break;
@@ -3956,7 +4475,7 @@
             case "autoClaimPoints":
             case "autoClaimDrops":
             case "autoClaimMoments":
-                if (settings.autoClaimPoints !== false || settings.autoClaimDrops !== false || settings.autoClaimMoments) {
+                if (settings.autoClaimPoints !== false || settings.autoClaimDrops !== false || settings.autoClaimMoments || settings.autoClaimStreaks !== false) {
                     startAutoClaimPoints();
                 } else {
                     stopAutoClaimPoints();
@@ -4007,6 +4526,15 @@
                 if (value) { enableLurkMode(); } else { disableLurkMode(); }
                 break;
 
+            case "anonChat":
+                document.dispatchEvent(new CustomEvent("tp-anon-chat", {
+                    detail: { enabled: !!value },
+                }));
+                // Remove any existing prompt and banner when toggling
+                document.querySelectorAll(".tp-anon-prompt").forEach(el => el.remove());
+                if (!value) removeAnonBanner();
+                break;
+
             case "emoteTabCompletion":
                 if (value) {
                     initEmoteCompletion();
@@ -4017,6 +4545,10 @@
 
             case "autoTheaterMode":
                 if (value) autoTheaterMode();
+                break;
+
+            case "autoReloadPlayer":
+                if (value) { startPlayerAutoReload(); } else { stopPlayerAutoReload(); }
                 break;
 
             case "autoQuality":
@@ -4058,6 +4590,15 @@
                 applyChatPosition();
                 break;
 
+            case "language":
+                tpSetLocale(value);
+                // Re-create settings panel to reflect new language
+                if (settingsPanelEl) {
+                    closeSettingsPanel();
+                    setTimeout(() => openSettingsPanel(), 100);
+                }
+                break;
+
             case "watchTimeTracker":
                 if (value) { initWatchTimeTracker(); } else { stopWatchTimeTracker(); }
                 break;
@@ -4082,6 +4623,7 @@
 
     async function onChannelChange(channel) {
         if (!channel || channel === currentChannel) return;
+        const previousChannelId = currentChannelId;
         currentChannel = channel;
         currentChannelId = null;
         nonChannelPageInitPath = null; // reset so VOD/clip re-init works after navigating back
@@ -4090,6 +4632,7 @@
         // Fire-and-forget features that don't depend on chat or emotes:
         // These run immediately and use their own internal retry/timing.
         autoTheaterMode();
+        startPlayerAutoReload();
 
         if (settings.autoClaimPoints !== false || settings.autoClaimDrops !== false || settings.autoClaimMoments) {
             startAutoClaimPoints();
@@ -4097,20 +4640,38 @@
             stopAutoClaimPoints();
         }
 
+        // Fix channel points rewards popup clipping
+        startRewardsPopupFix();
+
         // Clean up previous channel's session features
         stopWatchTimeTracker();
         stopVodClock();
         stopClipLabelObserver();
         stopPlayerControlsObserver();
         stopEnhancedUserCards();
+        stopRewardsPopupFix();
+        stopPlayerAutoReload();
+
+        // Wait briefly for React to render the new channel's components
+        await new Promise(r => setTimeout(r, 500));
 
         // Try to get channel ID from the page-world script
         const result = await requestChannelId();
-        currentChannelId = result?.channelId || null;
+        const resolvedId = result?.channelId || null;
+
+        // Validate the resolved ID is not stale (from the previous channel)
+        if (resolvedId && resolvedId !== previousChannelId) {
+            currentChannelId = resolvedId;
+        } else if (resolvedId && !previousChannelId) {
+            // First load or no previous — trust the result
+            currentChannelId = resolvedId;
+        } else {
+            currentChannelId = null;
+        }
 
         if (!currentChannelId) {
             // Fallback: load only global emotes, we'll retry getting channelId later
-            console.warn("[Twitch Plus] Could not resolve channel ID, loading global emotes only.");
+            console.warn("[Twitch Plus] Could not resolve channel ID (may be stale), loading global emotes only.");
             await loadGlobalEmotesOnly();
         } else {
             await loadEmotes(currentChannelId);
@@ -4129,6 +4690,7 @@
             applySettingChange("alternatingUsers", settings.alternatingUsers !== false);
             applySettingChange("splitChat", settings.splitChat !== false);
             if (settings.lurkMode) applySettingChange("lurkMode", true);
+            if (settings.anonChat) applySettingChange("anonChat", true);
         } catch (e) {
             console.warn("[Twitch Plus] Chat container not found after channel change.");
         }
@@ -4157,17 +4719,28 @@
         applyChatPosition();
         initVodClock();
 
+        // Re-apply auto quality on channel change
+        if (settings.autoQuality) {
+            setTimeout(() => {
+                document.dispatchEvent(new CustomEvent("tp-set-quality", {
+                    detail: { quality: settings.autoQuality },
+                }));
+            }, 3000);
+        }
+
     }
 
     // Retry channel ID resolution — sometimes the React tree isn't ready immediately
-    async function retryChannelId() {
+    async function retryChannelId(previousChannelId) {
         if (currentChannelId) return;
-        for (let i = 0; i < 5; i++) {
-            await new Promise((r) => setTimeout(r, 2000));
+        for (let i = 0; i < 8; i++) {
+            await new Promise((r) => setTimeout(r, 800));
+            if (currentChannelId) return; // resolved by another path
             const result = await requestChannelId();
-            if (result?.channelId) {
-                currentChannelId = result.channelId;
-                console.log(`[Twitch Plus] Channel ID resolved on retry: ${currentChannelId}`);
+            const id = result?.channelId;
+            if (id && id !== previousChannelId) {
+                currentChannelId = id;
+                console.log(`[Twitch Plus] Channel ID resolved on retry ${i + 1}: ${currentChannelId}`);
                 await loadEmotes(currentChannelId);
                 // Re-process existing messages with new emotes
                 const chatContainer = findChatContainer();
@@ -4177,6 +4750,16 @@
                         delete msg.dataset.tpProcessed;
                         processMessage(msg);
                     });
+                }
+                // Refresh emote completion index
+                rebuildEmoteIndex();
+                // Re-apply auto quality after successful channel resolution
+                if (settings.autoQuality) {
+                    setTimeout(() => {
+                        document.dispatchEvent(new CustomEvent("tp-set-quality", {
+                            detail: { quality: settings.autoQuality },
+                        }));
+                    }, 2000);
                 }
                 return;
             }
@@ -4189,6 +4772,64 @@
     // ---------------------------------------------------------------------------
 
     let nonChannelPageInitPath = null; // tracks the last path initNonChannelPage ran for
+
+    /**
+     * Resolve channel ID for VOD pages via GQL (returns owner.id from video query).
+     */
+    function resolveVodOwnerId() {
+        return new Promise((resolve) => {
+            const videoIdMatch = location.pathname.match(/\/videos?\/(\d+)/);
+            if (!videoIdMatch) { resolve(null); return; }
+            const videoId = videoIdMatch[1];
+
+            let resolved = false;
+            const handler = (e) => {
+                if (resolved) return;
+                if (e.detail?.videoId !== videoId) return;
+                resolved = true;
+                document.removeEventListener("tp-vod-data-response", handler);
+                resolve(e.detail?.ownerId || null);
+            };
+            document.addEventListener("tp-vod-data-response", handler);
+            document.dispatchEvent(new CustomEvent("tp-request-vod-data", { detail: { videoId } }));
+
+            setTimeout(() => {
+                if (resolved) return;
+                resolved = true;
+                document.removeEventListener("tp-vod-data-response", handler);
+                resolve(null);
+            }, 5000);
+        });
+    }
+
+    /**
+     * Resolve broadcaster ID for clip pages via GQL.
+     */
+    function resolveClipBroadcasterId() {
+        return new Promise((resolve) => {
+            const slugMatch = location.pathname.match(/\/clip\/([^/?]+)/);
+            if (!slugMatch) { resolve(null); return; }
+            const slug = slugMatch[1];
+
+            let resolved = false;
+            const handler = (e) => {
+                if (resolved) return;
+                if (e.detail?.slug !== slug) return;
+                resolved = true;
+                document.removeEventListener("tp-clip-data-response", handler);
+                resolve(e.detail?.broadcasterId || null);
+            };
+            document.addEventListener("tp-clip-data-response", handler);
+            document.dispatchEvent(new CustomEvent("tp-request-clip-data", { detail: { slug } }));
+
+            setTimeout(() => {
+                if (resolved) return;
+                resolved = true;
+                document.removeEventListener("tp-clip-data-response", handler);
+                resolve(null);
+            }, 5000);
+        });
+    }
 
     async function initNonChannelPage() {
         const isVod = location.pathname.includes("/videos/");
@@ -4205,6 +4846,41 @@
         stopVodClock();
         stopPlayerControlsObserver();
 
+        // Player error auto-reload works on VOD/clip pages too
+        startPlayerAutoReload();
+
+        // Resolve channel ID via GQL (much more reliable than React fiber on VOD/clip pages)
+        let channelId = null;
+        if (isVod) {
+            channelId = await resolveVodOwnerId();
+        } else if (isClip) {
+            channelId = await resolveClipBroadcasterId();
+        }
+
+        // Fallback: try React fiber extraction
+        if (!channelId) {
+            console.log("[Twitch Plus] GQL channel ID not available, trying React fiber...");
+            const result = await requestChannelId();
+            channelId = result?.channelId || null;
+        }
+
+        if (channelId) {
+            currentChannelId = channelId;
+            console.log(`[Twitch Plus] VOD/clip channel ID resolved: ${channelId}`);
+            await loadEmotes(channelId);
+        } else {
+            console.warn("[Twitch Plus] Could not resolve channel ID for VOD/clip. Only global emotes available.");
+        }
+
+        // Start chat observer for VOD chat replay / clip chat
+        try {
+            await waitForElement(CHAT_CONTAINER_SELECTORS.join(", "), 10000);
+            startChatObserver();
+            console.log("[Twitch Plus] Chat observer started for VOD/clip page.");
+        } catch (e) {
+            console.log("[Twitch Plus] No chat container found on VOD/clip page (may not have chat replay).");
+        }
+
         // Inject player buttons with retry logic (waits for controls to render)
         await injectPlayerButtonsWithRetry();
 
@@ -4217,6 +4893,20 @@
         if (isClip) {
             injectClipDownloadButton();
             startClipLabelObserver();
+        }
+
+        // Inject settings button and emote menu if chat is present
+        injectSettingsButton();
+        injectEmoteMenuButton();
+        initEmoteCompletion();
+
+        // Apply auto quality on VOD/clip pages too
+        if (settings.autoQuality) {
+            setTimeout(() => {
+                document.dispatchEvent(new CustomEvent("tp-set-quality", {
+                    detail: { quality: settings.autoQuality },
+                }));
+            }, 3000);
         }
 
     }
@@ -4245,9 +4935,10 @@
                 console.log(`[Twitch Plus] Navigation event queued (settings not ready): ${channel}`);
                 return;
             }
+            const prevId = currentChannelId;
             onChannelChange(channel);
-            // Retry channelId in background
-            setTimeout(() => retryChannelId(), 3000);
+            // Retry channelId in background (shorter delay since onChannelChange already waits 500ms)
+            setTimeout(() => retryChannelId(prevId), 1500);
         }
     });
 
@@ -4373,6 +5064,15 @@
             console.warn("[Twitch Plus] Could not load settings:", e);
         }
 
+        // Initialize locale from settings
+        tpSetLocale(settings.language || "auto");
+
+        // Load frequent emotes
+        try {
+            const freqResp = await browser.runtime.sendMessage({ action: "getFrequentEmotes" });
+            frequentEmotes = freqResp?.data || {};
+        } catch (e) {}
+
         // Mark settings as ready — this unblocks navigation events that arrived early
         settingsReady = true;
 
@@ -4385,13 +5085,18 @@
         // Lurk mode
         if (settings.lurkMode) enableLurkMode();
 
-        // Auto quality (delayed to let player load)
+        // Auto quality (delayed to let player load, with retry)
         if (settings.autoQuality) {
-            setTimeout(() => {
-                document.dispatchEvent(new CustomEvent("tp-set-quality", {
-                    detail: { quality: settings.autoQuality },
-                }));
-            }, 4000);
+            const applyQuality = (delay) => {
+                setTimeout(() => {
+                    document.dispatchEvent(new CustomEvent("tp-set-quality", {
+                        detail: { quality: settings.autoQuality },
+                    }));
+                }, delay);
+            };
+            applyQuality(4000);
+            // Retry in case player wasn't ready on first attempt
+            applyQuality(8000);
         }
 
         // Autoplay prevention (homepage/directory)

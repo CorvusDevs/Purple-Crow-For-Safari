@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "Twitch Plus",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "يحسّن Twitch برموز BTTV وFFZ و7TV وتحسينات الدردشة والمزيد.",
+        "description": "Description of what the extension does."
+    }
+}

@@ -28,6 +28,7 @@ A practical reference for building Safari Web Extensions on macOS/iOS, based on 
 20. [MutationObserver for Lazy-Rendered UI](#mutationobserver-for-lazy-rendered-ui)
 21. [Multi-Language Text Matching](#multi-language-text-matching)
 22. [Popup as Settings Panel Opener](#popup-as-settings-panel-opener)
+23. [Welcome Screen with Platform-Specific Setup Instructions](#welcome-screen-with-platform-specific-setup-instructions)
 
 ---
 
@@ -1340,6 +1341,231 @@ browser.runtime.onMessage.addListener((request) => {
 
 ---
 
+## Welcome Screen with Platform-Specific Setup Instructions
+
+The host app (the thin native wrapper) displays a welcome/onboarding screen when launched. This is the user's first interaction with your extension. It should detect the platform (macOS vs iOS/iPadOS) and show localized, step-by-step instructions for enabling the extension in Safari.
+
+### Architecture
+
+```
+ViewController.swift  →  WKWebView  →  Main.html + Style.css + Script.js
+      │
+      ├─ #if os(iOS):  evaluateJavaScript("show('ios')")
+      └─ #if os(macOS): evaluateJavaScript("show('mac', isEnabled, useSettings)")
+```
+
+The native `ViewController` loads `Main.html` into a `WKWebView`, then calls a JS function with platform info. On macOS, it also queries `SFSafariExtensionManager.getStateOfSafariExtension()` to check if the extension is already enabled and passes that state to JS.
+
+### ViewController.swift pattern
+
+```swift
+import WebKit
+
+#if os(iOS)
+import UIKit
+typealias PlatformViewController = UIViewController
+#elseif os(macOS)
+import Cocoa
+import SafariServices
+typealias PlatformViewController = NSViewController
+#endif
+
+let extensionBundleIdentifier = "com.yourcompany.YourApp.Extension"
+
+class ViewController: PlatformViewController, WKNavigationDelegate, WKScriptMessageHandler {
+    @IBOutlet var webView: WKWebView!
+
+    override func viewDidLoad() {
+        super.viewDidLoad()
+        webView.navigationDelegate = self
+        #if os(iOS)
+        webView.scrollView.isScrollEnabled = false
+        #endif
+        webView.configuration.userContentController.add(self, name: "controller")
+        webView.loadFileURL(
+            Bundle.main.url(forResource: "Main", withExtension: "html")!,
+            allowingReadAccessTo: Bundle.main.resourceURL!
+        )
+    }
+
+    func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
+        #if os(iOS)
+        // iOS: no SFSafariExtensionManager — show instructions only
+        webView.evaluateJavaScript("show('ios')")
+        #elseif os(macOS)
+        // macOS: query extension state and show enabled/disabled badge
+        webView.evaluateJavaScript("show('mac')")
+        SFSafariExtensionManager.getStateOfSafariExtension(
+            withIdentifier: extensionBundleIdentifier
+        ) { (state, error) in
+            guard let state = state, error == nil else { return }
+            DispatchQueue.main.async {
+                if #available(macOS 13, *) {
+                    webView.evaluateJavaScript("show('mac', \(state.isEnabled), true)")
+                } else {
+                    webView.evaluateJavaScript("show('mac', \(state.isEnabled), false)")
+                }
+            }
+        }
+        #endif
+    }
+
+    func userContentController(_ userContentController: WKUserContentController,
+                                didReceive message: WKScriptMessage) {
+        #if os(macOS)
+        guard (message.body as? String) == "open-preferences" else { return }
+        SFSafariApplication.showPreferencesForExtension(
+            withIdentifier: extensionBundleIdentifier
+        ) { error in
+            guard error == nil else { return }
+            DispatchQueue.main.async { NSApp.terminate(self) }
+        }
+        #endif
+    }
+}
+```
+
+Key points:
+- **`SFSafariExtensionManager`** is macOS-only. On iOS there is no API to check extension state programmatically — just show instructions.
+- **macOS 13+ uses "Settings"** instead of "Preferences" in Safari's menu. The `useSettingsInsteadOfPreferences` flag lets the JS update button text accordingly.
+- **`webkit.messageHandlers.controller.postMessage()`** sends messages from the WKWebView back to Swift for actions like opening Safari's extension preferences pane.
+
+### HTML: platform-conditional content
+
+Use CSS classes for platform/state visibility. The JS `show()` function adds the appropriate class to `<body>`, and CSS rules hide irrelevant content.
+
+```html
+<body>
+    <img src="../Icon.png" width="128" height="128" alt="App Icon">
+    <h1>Your Extension</h1>
+
+    <!-- macOS status badges (shown based on extension state) -->
+    <p class="platform-mac state-on">Extension is enabled in Safari. You're all set!</p>
+    <p class="platform-mac state-off">Extension is currently disabled.</p>
+    <p class="platform-mac state-unknown">Enable the extension to get started.</p>
+
+    <!-- macOS instructions -->
+    <div class="platform-mac instructions">
+        <div class="step"><span class="step-num">1</span><span>Open <strong>Safari</strong> and go to <strong>Settings</strong> (⌘,)</span></div>
+        <div class="step"><span class="step-num">2</span><span>Click the <strong>Extensions</strong> tab</span></div>
+        <div class="step"><span class="step-num">3</span><span>Check the box next to <strong>Your Extension</strong></span></div>
+        <div class="step"><span class="step-num">4</span><span>Allow it to run on <strong>yoursite.com</strong> when prompted</span></div>
+        <div class="step"><span class="step-num">5</span><span>Visit <strong>yoursite.com</strong> — look for the icon in your toolbar</span></div>
+    </div>
+
+    <button class="platform-mac open-preferences">Quit and Open Safari Extensions Preferences…</button>
+
+    <!-- iOS / iPadOS instructions -->
+    <div class="platform-ios instructions">
+        <div class="step"><span class="step-num">1</span><span>Open the <strong>Settings</strong> app on your device</span></div>
+        <div class="step"><span class="step-num">2</span><span>Scroll down and tap <strong>Safari</strong></span></div>
+        <div class="step"><span class="step-num">3</span><span>Tap <strong>Extensions</strong></span></div>
+        <div class="step"><span class="step-num">4</span><span>Tap <strong>Your Extension</strong> and toggle it <strong>on</strong></span></div>
+        <div class="step"><span class="step-num">5</span><span>Set permissions to <strong>Allow</strong> on <strong>yoursite.com</strong></span></div>
+        <div class="step"><span class="step-num">6</span><span>Open Safari and visit <strong>yoursite.com</strong> — tap <strong>ᴬᴬ</strong> in the address bar to verify</span></div>
+    </div>
+</body>
+```
+
+### CSS: platform and state visibility
+
+```css
+/* Hide all platform-specific content until JS sets the class */
+body:not(.platform-mac, .platform-ios) :is(.platform-mac, .platform-ios) {
+    display: none;
+}
+body.platform-ios .platform-mac { display: none; }
+body.platform-mac .platform-ios { display: none; }
+
+/* State badges (macOS only — iOS has no state API) */
+body:not(.state-on, .state-off) :is(.state-on, .state-off) { display: none; }
+body.state-on :is(.state-off, .state-unknown) { display: none; }
+body.state-off :is(.state-on, .state-unknown) { display: none; }
+
+.state-on { color: #22c55e; font-weight: 600; }
+.state-off { color: #ef4444; font-weight: 600; }
+
+/* Instruction steps with numbered circles */
+.instructions {
+    width: 100%;
+    text-align: left;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 16px;
+    border-radius: 12px;
+    background: rgba(0, 0, 0, 0.03);
+}
+@media (prefers-color-scheme: dark) {
+    .instructions { background: rgba(255, 255, 255, 0.06); }
+}
+.step {
+    display: flex;
+    align-items: flex-start;
+    gap: 12px;
+    font-size: 14px;
+    line-height: 1.5;
+}
+.step-num {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 24px; height: 24px;
+    border-radius: 50%;
+    background: var(--accent-color, #9147ff);
+    color: #fff;
+    font-size: 12px;
+    font-weight: 700;
+    flex-shrink: 0;
+}
+```
+
+### JS: show function
+
+```js
+function show(platform, enabled, useSettingsInsteadOfPreferences) {
+    document.body.classList.add(`platform-${platform}`);
+
+    // macOS 13+ renamed "Preferences" → "Settings"
+    if (useSettingsInsteadOfPreferences) {
+        document.querySelector('.platform-mac.open-preferences').innerText =
+            "Quit and Open Safari Settings…";
+    }
+
+    if (typeof enabled === "boolean") {
+        document.body.classList.toggle("state-on", enabled);
+        document.body.classList.toggle("state-off", !enabled);
+    }
+}
+
+function openPreferences() {
+    webkit.messageHandlers.controller.postMessage("open-preferences");
+}
+
+document.querySelector("button.open-preferences")
+    .addEventListener("click", openPreferences);
+```
+
+### Localization considerations
+
+- **The welcome screen HTML is a local file**, not an extension resource. It does **not** have access to `browser.i18n.getMessage()`. It runs inside the native app's `WKWebView`, not in the extension context.
+- **For multi-language support**: Use the native `WKWebView` localization system. Place `Main.html` inside a `.lproj` folder (e.g., `en.lproj/Main.html`, `es.lproj/Main.html`) or use Xcode's Base localization with localized `.strings` files. The WKWebView will load the correct localized variant based on the system language.
+- **Keep instruction text simple and universal.** Safari's UI labels ("Settings", "Extensions") are localized by Apple. Refer to them by function ("the Extensions tab") rather than by exact localized name to avoid mismatches if Apple changes the wording.
+- **Use Xcode's Base Internationalization**: Set `Main.html` to use Base localization. Xcode will generate a base version and allow you to add localizable strings for each target language. This is the cleanest approach for HTML content inside a native app.
+
+### Platform-specific notes
+
+| Feature | macOS | iOS/iPadOS |
+|---------|-------|------------|
+| Extension state detection | `SFSafariExtensionManager.getStateOfSafariExtension()` | Not available |
+| Open extension prefs | `SFSafariApplication.showPreferencesForExtension()` | Not available |
+| Enable path | Safari > Settings > Extensions > checkbox | Settings app > Safari > Extensions > toggle |
+| Permission grant | Safari prompt on first visit | Settings app > Extensions > website access |
+| Verify enabled | Toolbar icon appears | ᴬᴬ menu in address bar shows extension |
+| "Preferences" vs "Settings" | macOS 12: "Preferences", macOS 13+: "Settings" | Always "Settings" |
+
+---
+
 ## Quick Checklist for New Safari Extensions
 
 - [ ] Use `browser.*` APIs with Promises (not `chrome.*` with callbacks)
@@ -1366,3 +1592,6 @@ browser.runtime.onMessage.addListener((request) => {
 - [ ] Don't attempt `createMediaElementSource()` on HLS/MSE video — it won't route audio in Safari
 - [ ] Consider making the popup a bridge to the in-page settings panel for universal access
 - [ ] Check established implementations of similar extensions before building features they already solve — avoid trial-and-error when proven approaches exist
+- [ ] Include platform-specific setup instructions in the welcome screen (macOS: Safari Settings > Extensions; iOS: Settings app > Safari > Extensions)
+- [ ] Use `SFSafariExtensionManager.getStateOfSafariExtension()` on macOS to show enabled/disabled state badges
+- [ ] Handle macOS 13+ "Settings" vs older "Preferences" naming in button text

@@ -37,16 +37,19 @@ const DEFAULT_SETTINGS = {
     customNicknames: {},
     emoteTabCompletion: true,
     lurkMode: false,
+    anonChat: false,
     // Player
     autoTheaterMode: false,
     theaterOledBlack: false,
     theaterTransparentChat: false,
     autoQuality: "",
     disableAutoplay: false,
+    autoReloadPlayer: true,
     // Automation
     autoClaimPoints: true,
     autoClaimDrops: true,
     autoClaimMoments: false,
+    autoClaimStreaks: true,
     // Moderation
     modToolsEnabled: false,
     customTimeouts: [60, 600, 3600],
@@ -76,6 +79,8 @@ const DEFAULT_SETTINGS = {
     slowModeCountdown: true,
     channelPreviews: true,
     autoExpandFollowed: true,
+    // Localization
+    language: "auto",
 };
 
 let settings = { ...DEFAULT_SETTINGS };
@@ -96,7 +101,9 @@ function pruneCache(cache, maxSize) {
 
 // Cache for emote data: channelId -> { bttv, ffz, sevenTv, timestamp }
 const emoteCache = new Map();
-const CACHE_TTL = 5 * 60 * 1000; // 5 minutes
+const CACHE_TTL = 5 * 60 * 1000; // 5 minutes (in-memory hot cache)
+const PERSISTENT_CACHE_TTL = 30 * 60 * 1000; // 30 minutes (storage warm cache)
+const GLOBAL_EMOTES_TTL = 60 * 60 * 1000; // 1 hour (global emotes persistent cache)
 
 // Global emotes (fetched once per session)
 let globalEmotes = null;
@@ -299,6 +306,19 @@ function mapSevenTvEmote(e) {
 // ---------------------------------------------------------------------------
 async function fetchGlobalEmotes() {
     if (globalEmotes) return globalEmotes;
+
+    // Check persistent storage (warm cache)
+    try {
+        const stored = await browser.storage.local.get("globalEmoteCache");
+        if (stored.globalEmoteCache && Date.now() - stored.globalEmoteCache.timestamp < GLOBAL_EMOTES_TTL) {
+            globalEmotes = stored.globalEmoteCache;
+            console.log(
+                `[Twitch Plus] Global emotes loaded from cache: BTTV=${globalEmotes.bttv.length}, FFZ=${globalEmotes.ffz.length}, 7TV=${globalEmotes.sevenTv.length}`
+            );
+            return globalEmotes;
+        }
+    } catch (e) {}
+
     if (globalEmotesFetching) {
         // Wait for the in-flight fetch
         return new Promise((resolve) => {
@@ -318,11 +338,17 @@ async function fetchGlobalEmotes() {
         settings.sevenTvEmotes ? fetchSevenTvGlobal() : [],
     ]);
 
-    globalEmotes = { bttv, ffz, sevenTv };
+    globalEmotes = { bttv, ffz, sevenTv, timestamp: Date.now() };
     globalEmotesFetching = false;
     console.log(
         `[Twitch Plus] Global emotes loaded: BTTV=${bttv.length}, FFZ=${ffz.length}, 7TV=${sevenTv.length}`
     );
+
+    // Persist to storage
+    try {
+        await browser.storage.local.set({ globalEmoteCache: globalEmotes });
+    } catch (e) {}
+
     return globalEmotes;
 }
 
@@ -332,11 +358,27 @@ async function fetchGlobalEmotes() {
 async function fetchChannelEmotes(channelId) {
     if (!channelId) return { bttv: [], ffz: [], sevenTv: [] };
 
+    // Check in-memory hot cache (5-min TTL)
     const cached = emoteCache.get(channelId);
     if (cached && Date.now() - cached.timestamp < CACHE_TTL) {
         return cached;
     }
 
+    // Check persistent storage warm cache (30-min TTL)
+    try {
+        const storageKey = `emoteCache_${channelId}`;
+        const stored = await browser.storage.local.get(storageKey);
+        if (stored[storageKey] && Date.now() - stored[storageKey].timestamp < PERSISTENT_CACHE_TTL) {
+            const data = stored[storageKey];
+            emoteCache.set(channelId, data); // promote to hot cache
+            console.log(
+                `[Twitch Plus] Channel ${channelId} emotes loaded from cache: BTTV=${data.bttv.length}, FFZ=${data.ffz.length}, 7TV=${data.sevenTv.length}`
+            );
+            return data;
+        }
+    } catch (e) {}
+
+    // Fetch from APIs
     const [bttv, ffz, sevenTv] = await Promise.all([
         settings.bttvEmotes ? fetchBttvChannel(channelId) : [],
         settings.ffzEmotes ? fetchFfzChannel(channelId) : [],
@@ -345,9 +387,16 @@ async function fetchChannelEmotes(channelId) {
 
     const result = { bttv, ffz, sevenTv, timestamp: Date.now() };
     emoteCache.set(channelId, result);
+    pruneCache(emoteCache, 50);
     console.log(
         `[Twitch Plus] Channel ${channelId} emotes loaded: BTTV=${bttv.length}, FFZ=${ffz.length}, 7TV=${sevenTv.length}`
     );
+
+    // Persist to storage
+    try {
+        await browser.storage.local.set({ [`emoteCache_${channelId}`]: result });
+    } catch (e) {}
+
     return result;
 }
 
@@ -388,10 +437,17 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     }
 
     if (request.action === "updateSettings") {
-        return saveSettings(request.settings).then(() => {
-            // Invalidate global emote cache so provider toggles take effect
+        return saveSettings(request.settings).then(async () => {
+            // Invalidate all emote caches so provider toggles take effect
             globalEmotes = null;
             emoteCache.clear();
+            // Clear persistent caches
+            try {
+                const allKeys = Object.keys(await browser.storage.local.get(null));
+                const emoteCacheKeys = allKeys.filter(k => k.startsWith("emoteCache_"));
+                if (emoteCacheKeys.length > 0) await browser.storage.local.remove(emoteCacheKeys);
+                await browser.storage.local.remove("globalEmoteCache");
+            } catch (e) {}
             return { settings };
         });
     }
@@ -457,6 +513,17 @@ browser.runtime.onMessage.addListener((request, sender, sendResponse) => {
     // --- YouTube Preview ---
     if (request.action === "getYoutubePreview") {
         return fetchYoutubePreview(request.url);
+    }
+
+    // --- Frequent Emotes ---
+    if (request.action === "getFrequentEmotes") {
+        return browser.storage.local.get("frequentEmotes")
+            .then(result => ({ data: result.frequentEmotes || {} }));
+    }
+
+    if (request.action === "saveFrequentEmotes") {
+        return browser.storage.local.set({ frequentEmotes: request.data })
+            .then(() => ({ success: true }));
     }
 
     // --- Open Settings Panel (relayed from popup) ---

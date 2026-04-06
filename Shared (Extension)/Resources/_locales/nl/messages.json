@@ -1,0 +1,10 @@
+{
+    "extension_name": {
+        "message": "Twitch Plus",
+        "description": "The display name for the extension."
+    },
+    "extension_description": {
+        "message": "Verbetert Twitch met BTTV-, FFZ- en 7TV-emotes, chatverbeteringen en meer.",
+        "description": "Description of what the extension does."
+    }
+}
