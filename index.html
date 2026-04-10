@@ -202,6 +202,27 @@
 
         .hero-cta svg { width: 20px; height: 20px; }
 
+        .hero-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+        .hero-cta-upcoming {
+            background: var(--bg-card);
+            border: 1px solid var(--border);
+            color: var(--text-secondary);
+            cursor: default;
+            opacity: 0.7;
+        }
+
+        .hero-cta-upcoming:hover {
+            filter: none;
+            transform: none;
+            box-shadow: none;
+        }
+
         .hero-req {
             display: block;
             margin-top: 14px;
@@ -492,11 +513,17 @@
         <img src="icon.png" alt="Purple Crow" class="hero-icon">
         <h1 data-i18n-html="hero_title">Purple Crow<br>for Safari</h1>
         <p class="subtitle" data-i18n="hero_sub">BTTV, FrankerFaceZ, and 7TV emotes in Safari — plus 50+ features to make Twitch better. Auto-claim, split chat, PiP, anonymous viewing, and more.</p>
-        <a href="https://apps.apple.com/app/id6761481948" class="hero-cta" id="storeBtn">
-            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
-            <span data-i18n="hero_cta">Download on the App Store</span>
-        </a>
-        <span class="hero-req" data-i18n="hero_req">Requires macOS 14.0 or later</span>
+        <div class="hero-buttons">
+            <a href="https://apps.apple.com/app/id6761481948" class="hero-cta" id="storeBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <span data-i18n="hero_cta_ios">Download for iOS</span>
+            </a>
+            <span class="hero-cta hero-cta-upcoming">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <span data-i18n="hero_cta_mac">macOS — Upcoming</span>
+            </span>
+        </div>
+        <span class="hero-req" data-i18n="hero_req">Requires iOS 17.0 or later</span>
     </section>
 
     <!-- Features -->
@@ -633,7 +660,7 @@
     const T = {
         en: {
             nav_features:"Features", nav_how:"How it works", nav_contact:"Contact",
-            hero_title:"Purple Crow<br>for Safari", hero_sub:"BTTV, FrankerFaceZ, and 7TV emotes in Safari — plus 50+ features to make Twitch better. Auto-claim, split chat, PiP, anonymous viewing, and more.", hero_cta:"Download on the App Store", hero_req:"Requires macOS 14.0 or later",
+            hero_title:"Purple Crow<br>for Safari", hero_sub:"BTTV, FrankerFaceZ, and 7TV emotes in Safari — plus 50+ features to make Twitch better. Auto-claim, split chat, PiP, anonymous viewing, and more.", hero_cta_ios:"Download for iOS", hero_cta_mac:"macOS — Upcoming", hero_req:"Requires iOS 17.0 or later",
             sec_features:"Features", sec_features_title:"Everything Twitch should have built in",
             f1_t:"Third-Party Emotes", f1_d:"Full BetterTTV, FrankerFaceZ, and 7TV support with real-time updates. See every emote your favorite streamers use.",
             f2_t:"Split Chat", f2_d:"Alternating message backgrounds with 11 color themes. Read fast-moving chats without losing your place.",
@@ -658,7 +685,7 @@
         },
         es: {
             nav_features:"Funciones", nav_how:"Cómo funciona", nav_contact:"Contacto",
-            hero_title:"Purple Crow<br>para Safari", hero_sub:"Emotes de BTTV, FrankerFaceZ y 7TV en Safari — además de más de 50 funciones para mejorar Twitch. Auto-claim, split chat, PiP, modo anónimo y más.", hero_cta:"Descargar en la App Store", hero_req:"Requiere macOS 14.0 o posterior",
+            hero_title:"Purple Crow<br>para Safari", hero_sub:"Emotes de BTTV, FrankerFaceZ y 7TV en Safari — además de más de 50 funciones para mejorar Twitch. Auto-claim, split chat, PiP, modo anónimo y más.", hero_cta_ios:"Descargar para iOS", hero_cta_mac:"macOS — Próximamente", hero_req:"Requiere iOS 17.0 o posterior",
             sec_features:"Funciones", sec_features_title:"Todo lo que Twitch debería haber incluido",
             f1_t:"Emotes de Terceros", f1_d:"Soporte completo de BetterTTV, FrankerFaceZ y 7TV con actualizaciones en tiempo real. Ve cada emote que usan tus streamers favoritos.",
             f2_t:"Chat Dividido", f2_d:"Fondos alternos de mensajes con 11 temas de color. Lee chats rápidos sin perder tu lugar.",
@@ -683,7 +710,7 @@
         },
         fr: {
             nav_features:"Fonctions", nav_how:"Comment ça marche", nav_contact:"Contact",
-            hero_title:"Purple Crow<br>pour Safari", hero_sub:"Les emotes BTTV, FrankerFaceZ et 7TV dans Safari — plus de 50 fonctionnalités pour améliorer Twitch. Auto-claim, split chat, PiP, mode anonyme et plus.", hero_cta:"Télécharger sur l'App Store", hero_req:"Nécessite macOS 14.0 ou ultérieur",
+            hero_title:"Purple Crow<br>pour Safari", hero_sub:"Les emotes BTTV, FrankerFaceZ et 7TV dans Safari — plus de 50 fonctionnalités pour améliorer Twitch. Auto-claim, split chat, PiP, mode anonyme et plus.", hero_cta_ios:"Télécharger pour iOS", hero_cta_mac:"macOS — Bientôt", hero_req:"Nécessite iOS 17.0 ou ultérieur",
             sec_features:"Fonctions", sec_features_title:"Tout ce que Twitch aurait dû inclure",
             f1_t:"Emotes Tiers", f1_d:"Support complet de BetterTTV, FrankerFaceZ et 7TV avec mises à jour en temps réel.",
             f2_t:"Chat Alterné", f2_d:"Arrière-plans de messages alternés avec 11 thèmes de couleurs. Lisez les chats rapides facilement.",
@@ -708,7 +735,7 @@
         },
         de: {
             nav_features:"Funktionen", nav_how:"So funktioniert's", nav_contact:"Kontakt",
-            hero_title:"Purple Crow<br>für Safari", hero_sub:"BTTV-, FrankerFaceZ- und 7TV-Emotes in Safari — plus 50+ Funktionen für ein besseres Twitch. Auto-Claim, Split Chat, PiP, anonymes Zuschauen und mehr.", hero_cta:"Im App Store laden", hero_req:"Erfordert macOS 14.0 oder neuer",
+            hero_title:"Purple Crow<br>für Safari", hero_sub:"BTTV-, FrankerFaceZ- und 7TV-Emotes in Safari — plus 50+ Funktionen für ein besseres Twitch. Auto-Claim, Split Chat, PiP, anonymes Zuschauen und mehr.", hero_cta_ios:"Für iOS laden", hero_cta_mac:"macOS — Demnächst", hero_req:"Erfordert iOS 17.0 oder neuer",
             sec_features:"Funktionen", sec_features_title:"Alles, was Twitch hätte einbauen sollen",
             f1_t:"Drittanbieter-Emotes", f1_d:"Volle Unterstützung für BetterTTV, FrankerFaceZ und 7TV mit Echtzeit-Updates.",
             f2_t:"Split Chat", f2_d:"Abwechselnde Nachrichtenhintergründe mit 11 Farbthemen. Schnelle Chats leichter lesen.",
@@ -733,7 +760,7 @@
         },
         pt: {
             nav_features:"Recursos", nav_how:"Como funciona", nav_contact:"Contato",
-            hero_title:"Purple Crow<br>para Safari", hero_sub:"Emotes BTTV, FrankerFaceZ e 7TV no Safari — além de 50+ recursos para melhorar o Twitch.", hero_cta:"Baixar na App Store", hero_req:"Requer macOS 14.0 ou posterior",
+            hero_title:"Purple Crow<br>para Safari", hero_sub:"Emotes BTTV, FrankerFaceZ e 7TV no Safari — além de 50+ recursos para melhorar o Twitch.", hero_cta_ios:"Baixar para iOS", hero_cta_mac:"macOS — Em breve", hero_req:"Requer iOS 17.0 ou posterior",
             sec_features:"Recursos", sec_features_title:"Tudo que o Twitch deveria ter incluso",
             f1_t:"Emotes de Terceiros", f1_d:"Suporte completo a BetterTTV, FrankerFaceZ e 7TV com atualizações em tempo real.",
             f2_t:"Chat Dividido", f2_d:"Fundos alternados de mensagens com 11 temas de cores. Leia chats rápidos facilmente.",
@@ -758,7 +785,7 @@
         },
         it: {
             nav_features:"Funzioni", nav_how:"Come funziona", nav_contact:"Contatto",
-            hero_title:"Purple Crow<br>per Safari", hero_sub:"Emote BTTV, FrankerFaceZ e 7TV in Safari — più di 50 funzionalità per migliorare Twitch.", hero_cta:"Scarica dall'App Store", hero_req:"Richiede macOS 14.0 o successivo",
+            hero_title:"Purple Crow<br>per Safari", hero_sub:"Emote BTTV, FrankerFaceZ e 7TV in Safari — più di 50 funzionalità per migliorare Twitch.", hero_cta_ios:"Scarica per iOS", hero_cta_mac:"macOS — In arrivo", hero_req:"Richiede iOS 17.0 o successivo",
             sec_features:"Funzioni", sec_features_title:"Tutto ciò che Twitch avrebbe dovuto includere",
             f1_t:"Emote di Terze Parti", f1_d:"Supporto completo per BetterTTV, FrankerFaceZ e 7TV con aggiornamenti in tempo reale.",
             f2_t:"Chat Alternato", f2_d:"Sfondi alternati dei messaggi con 11 temi colore. Leggi chat veloci senza perdere il filo.",
@@ -783,7 +810,7 @@
         },
         ja: {
             nav_features:"機能", nav_how:"使い方", nav_contact:"お問い合わせ",
-            hero_title:"Purple Crow<br>for Safari", hero_sub:"SafariでBTTV、FrankerFaceZ、7TVのエモートを表示。50以上の機能でTwitchをもっと快適に。", hero_cta:"App Storeでダウンロード", hero_req:"macOS 14.0以降が必要",
+            hero_title:"Purple Crow<br>for Safari", hero_sub:"SafariでBTTV、FrankerFaceZ、7TVのエモートを表示。50以上の機能でTwitchをもっと快適に。", hero_cta_ios:"iOS版をダウンロード", hero_cta_mac:"macOS — 近日公開", hero_req:"iOS 17.0以降が必要",
             sec_features:"機能", sec_features_title:"Twitchに本来あるべきだった機能",
             f1_t:"サードパーティエモート", f1_d:"BetterTTV、FrankerFaceZ、7TVをリアルタイム更新で完全サポート。",
             f2_t:"スプリットチャット", f2_d:"11のカラーテーマで交互背景表示。高速チャットでも読みやすい。",
@@ -808,7 +835,7 @@
         },
         ko: {
             nav_features:"기능", nav_how:"사용법", nav_contact:"문의",
-            hero_title:"Purple Crow<br>for Safari", hero_sub:"Safari에서 BTTV, FrankerFaceZ, 7TV 이모트를 사용하세요. 50개 이상의 기능으로 Twitch를 더 좋게 만듭니다.", hero_cta:"App Store에서 다운로드", hero_req:"macOS 14.0 이상 필요",
+            hero_title:"Purple Crow<br>for Safari", hero_sub:"Safari에서 BTTV, FrankerFaceZ, 7TV 이모트를 사용하세요. 50개 이상의 기능으로 Twitch를 더 좋게 만듭니다.", hero_cta_ios:"iOS용 다운로드", hero_cta_mac:"macOS — 출시 예정", hero_req:"iOS 17.0 이상 필요",
             sec_features:"기능", sec_features_title:"Twitch에 있었어야 할 모든 것",
             f1_t:"서드파티 이모트", f1_d:"BetterTTV, FrankerFaceZ, 7TV 실시간 업데이트 완전 지원.",
             f2_t:"분할 채팅", f2_d:"11가지 색상 테마로 메시지 배경을 번갈아 표시. 빠른 채팅도 쉽게 읽기.",
@@ -833,7 +860,7 @@
         },
         ru: {
             nav_features:"Функции", nav_how:"Как это работает", nav_contact:"Контакты",
-            hero_title:"Purple Crow<br>для Safari", hero_sub:"Эмоуты BTTV, FrankerFaceZ и 7TV в Safari — плюс 50+ функций для улучшения Twitch.", hero_cta:"Загрузить из App Store", hero_req:"Требуется macOS 14.0 или новее",
+            hero_title:"Purple Crow<br>для Safari", hero_sub:"Эмоуты BTTV, FrankerFaceZ и 7TV в Safari — плюс 50+ функций для улучшения Twitch.", hero_cta_ios:"Скачать для iOS", hero_cta_mac:"macOS — Скоро", hero_req:"Требуется iOS 17.0 или новее",
             sec_features:"Функции", sec_features_title:"Всё, что Twitch должен был добавить",
             f1_t:"Сторонние эмоуты", f1_d:"Полная поддержка BetterTTV, FrankerFaceZ и 7TV с обновлениями в реальном времени.",
             f2_t:"Раздельный чат", f2_d:"Чередующиеся фоны сообщений с 11 цветовыми темами.",
