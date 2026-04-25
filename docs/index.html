@@ -1,0 +1,987 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Purple Crow for Safari — The Ultimate Twitch Experience</title>
+    <meta name="description" content="Purple Crow brings BTTV, FFZ, and 7TV emotes to Safari along with 50+ features: auto-claim, split chat, PiP, anonymous viewing, and more. Available on the Mac App Store.">
+    <link rel="canonical" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/">
+    <link rel="alternate" hreflang="en" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/">
+    <link rel="alternate" hreflang="es" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=es">
+    <link rel="alternate" hreflang="fr" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=fr">
+    <link rel="alternate" hreflang="de" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=de">
+    <link rel="alternate" hreflang="pt" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=pt">
+    <link rel="alternate" hreflang="it" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=it">
+    <link rel="alternate" hreflang="ja" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=ja">
+    <link rel="alternate" hreflang="ko" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=ko">
+    <link rel="alternate" hreflang="ru" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/?lang=ru">
+    <link rel="alternate" hreflang="x-default" href="https://corvusdevs.github.io/Purple-Crow-For-Safari/">
+    <meta property="og:type" content="website">
+    <meta property="og:url" content="https://corvusdevs.github.io/Purple-Crow-For-Safari/">
+    <meta property="og:title" content="Purple Crow for Safari — BTTV, FFZ, 7TV & 50+ Features">
+    <meta property="og:description" content="The ultimate Twitch experience in Safari. Third-party emotes, auto-claim, split chat, PiP, anonymous viewing, and more. Available on the Mac App Store.">
+    <meta property="og:image" content="https://corvusdevs.github.io/Purple-Crow-For-Safari/og-image.png">
+    <meta property="og:image:width" content="1200">
+    <meta property="og:image:height" content="630">
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="Purple Crow for Safari — BTTV, FFZ, 7TV & 50+ Features">
+    <meta name="twitter:description" content="The ultimate Twitch experience in Safari. Third-party emotes, auto-claim, split chat, and more.">
+    <meta name="twitter:image" content="https://corvusdevs.github.io/Purple-Crow-For-Safari/og-image.png">
+    <meta name="twitter:image:alt" content="Purple Crow for Safari">
+    <meta property="og:locale" content="en_US">
+    <meta property="og:site_name" content="Purple Crow for Safari">
+    <meta name="robots" content="index, follow">
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "Purple Crow for Safari",
+        "operatingSystem": "macOS 14.0+, iOS 17.0+, iPadOS 17.0+",
+        "applicationCategory": "UtilitiesApplication",
+        "applicationSubCategory": "Browser Extension",
+        "description": "Purple Crow brings BTTV, FFZ, and 7TV emotes to Safari along with 50+ features: auto-claim, split chat, PiP, anonymous viewing, and more. Available on the Mac App Store.",
+        "downloadUrl": "https://apps.apple.com/app/id6761481948",
+        "screenshot": "https://corvusdevs.github.io/Purple-Crow-For-Safari/og-image.png",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Organization", "name": "CorvusDevs", "url": "https://corvusdevs.github.io" }
+    }
+    </script>
+    <link rel="icon" type="image/png" sizes="32x32" href="icon.png">
+    <link rel="apple-touch-icon" sizes="180x180" href="icon.png">
+    <style>
+        :root {
+            --bg: #0a0a0c;
+            --surface: #111114;
+            --surface-2: #19191e;
+            --border: #252530;
+            --text: #e8e8ed;
+            --text-secondary: #7c7c84;
+            --accent: #9147ff;
+            --accent-light: #bf94ff;
+            --accent-dim: rgba(145, 71, 255, 0.1);
+            --accent-glow: rgba(145, 71, 255, 0.06);
+        }
+
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', sans-serif;
+            background: var(--bg);
+            color: var(--text);
+            line-height: 1.6;
+            -webkit-font-smoothing: antialiased;
+        }
+
+        /* FROSTED GLASS NAV */
+        nav {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            z-index: 100;
+            padding: 16px 32px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            background: rgba(0, 0, 0, 0.72);
+            backdrop-filter: saturate(180%) blur(20px);
+            -webkit-backdrop-filter: saturate(180%) blur(20px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+        }
+
+        .nav-brand {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+            text-decoration: none;
+            letter-spacing: -0.3px;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .nav-brand img {
+            width: 32px;
+            height: 32px;
+            border-radius: 8px;
+            display: block;
+        }
+
+        .nav-brand span { color: var(--accent); }
+
+        .nav-links {
+            display: flex;
+            gap: 28px;
+            list-style: none;
+        }
+
+        .nav-links a {
+            font-size: 14px;
+            color: var(--text-secondary);
+            text-decoration: none;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover { color: var(--text); }
+
+        /* ── Language Picker (custom dropdown) ── */
+        .lang-wrap { position: relative; margin-left: 16px; flex-shrink: 0; }
+        .lang-btn {
+            background: var(--surface); border: 1px solid var(--border); border-radius: 8px;
+            padding: 6px 28px 6px 12px; color: var(--text); font-size: 13px; cursor: pointer;
+            white-space: nowrap;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' fill='%237c7c84' viewBox='0 0 16 16'%3E%3Cpath d='M8 11L3 6h10z'/%3E%3C/svg%3E");
+            background-repeat: no-repeat; background-position: right 10px center;
+        }
+        .lang-menu {
+            display: none; position: absolute; top: calc(100% + 6px); right: 0; z-index: 300;
+            background: var(--surface); border: 1px solid var(--border); border-radius: 10px;
+            padding: 6px 0; min-width: 160px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+        .lang-menu.open { display: block; }
+        .lang-menu button {
+            display: block; width: 100%; padding: 8px 16px; background: none; border: none;
+            color: var(--text); font-size: 13px; cursor: pointer; text-align: left; white-space: nowrap;
+        }
+        .lang-menu button:hover { background: rgba(255,255,255,0.08); }
+        .lang-menu button.active { color: var(--accent); }
+
+        /* ── Hero ── */
+        .hero {
+            text-align: center;
+            padding: 160px 24px 100px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .hero::before {
+            content: '';
+            position: absolute;
+            top: -300px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 800px;
+            height: 800px;
+            background: radial-gradient(circle, var(--accent-glow) 0%, transparent 60%);
+            pointer-events: none;
+        }
+
+        .hero-icon {
+            width: 160px;
+            height: 160px;
+            border-radius: 36px;
+            margin-bottom: 32px;
+            position: relative;
+            border: 2px solid var(--border);
+            box-shadow: 0 0 60px 20px rgba(145, 71, 255, 0.25), 0 0 120px 50px rgba(145, 71, 255, 0.12), 0 0 200px 80px rgba(145, 71, 255, 0.06);
+        }
+
+        .hero h1 {
+            font-size: 56px;
+            font-weight: 800;
+            letter-spacing: -2px;
+            line-height: 1.1;
+            margin-bottom: 20px;
+            background: linear-gradient(135deg, #ffffff 0%, var(--accent-light) 100%);
+            -webkit-background-clip: text;
+            background-clip: text;
+            -webkit-text-fill-color: transparent;
+            color: transparent;
+        }
+
+        .hero .subtitle {
+            font-size: 20px;
+            color: var(--text-secondary);
+            max-width: 560px;
+            margin: 0 auto 48px;
+            font-weight: 400;
+            line-height: 1.6;
+        }
+
+        .hero-cta {
+            display: inline-flex;
+            align-items: center;
+            gap: 10px;
+            padding: 16px 36px;
+            background: var(--accent);
+            color: #fff;
+            font-size: 16px;
+            font-weight: 600;
+            border-radius: 14px;
+            text-decoration: none;
+            transition: all 0.2s;
+            border: none;
+            cursor: pointer;
+        }
+
+        .hero-cta:hover {
+            filter: brightness(1.15);
+            transform: translateY(-1px);
+            box-shadow: 0 8px 32px rgba(145, 71, 255, 0.3);
+        }
+
+        .hero-cta svg { width: 20px; height: 20px; }
+
+        .hero-buttons {
+            display: flex;
+            gap: 12px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+
+
+        .hero-req {
+            display: block;
+            margin-top: 14px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ── Features Grid ── */
+        .features {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px 100px;
+        }
+
+        .section-label {
+            font-size: 13px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1.5px;
+            color: var(--accent);
+            text-align: center;
+            margin-bottom: 12px;
+        }
+
+        .section-title {
+            font-size: 40px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: -1px;
+            margin-bottom: 56px;
+        }
+
+        .features-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .feature-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+            transition: border-color 0.3s;
+        }
+
+        .feature-card:hover {
+            border-color: rgba(145, 71, 255, 0.3);
+        }
+
+        /* GRADIENT TEXT utility */
+        .gradient-text {
+            background: linear-gradient(135deg, #9147ff 0%, #bf94ff 40%, #fff 100%);
+            -webkit-background-clip: text; background-clip: text; -webkit-text-fill-color: transparent;
+        }
+
+        /* SCROLL REVEAL */
+        .reveal {
+            opacity: 0;
+            transform: translateY(30px);
+            transition: opacity 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94), transform 0.8s cubic-bezier(0.25, 0.46, 0.45, 0.94);
+        }
+        .reveal.visible {
+            opacity: 1;
+            transform: translateY(0);
+        }
+
+        .feature-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            background: var(--accent-dim);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 16px;
+            box-shadow: 0 0 20px rgba(145, 71, 255, 0.15);
+        }
+        .feature-icon svg { width: 24px; height: 24px; }
+
+        .feature-card h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .feature-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ── How It Works ── */
+        .how-it-works {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 60px 24px 100px;
+        }
+
+        .steps {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 32px;
+            margin-top: 56px;
+        }
+
+        .step {
+            text-align: center;
+            position: relative;
+        }
+
+        .step-num {
+            width: 48px;
+            height: 48px;
+            border-radius: 14px;
+            background: var(--accent-dim);
+            color: var(--accent);
+            font-size: 20px;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto 18px;
+            border: 1px solid rgba(145, 71, 255, 0.2);
+        }
+
+        .step h3 {
+            font-size: 18px;
+            font-weight: 600;
+            margin-bottom: 8px;
+        }
+
+        .step p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ── Why Section ── */
+        .why {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 0 24px 100px;
+        }
+
+        .why-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .why-card {
+            background: var(--surface);
+            border: 1px solid var(--border);
+            border-radius: 16px;
+            padding: 32px;
+        }
+
+        .why-card h3 {
+            font-size: 17px;
+            font-weight: 600;
+            margin-bottom: 10px;
+        }
+
+        .why-card p {
+            font-size: 14px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        /* ── Requirements ── */
+        .req {
+            text-align: center;
+            padding: 0 24px 60px;
+            font-size: 14px;
+            color: var(--text-secondary);
+        }
+
+        /* ── Footer ── */
+        footer {
+            max-width: 960px;
+            margin: 0 auto;
+            padding: 40px 24px 60px;
+            border-top: 1px solid var(--border);
+        }
+
+        .footer-grid {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr;
+            gap: 40px;
+        }
+
+        .footer-brand .logo {
+            font-size: 18px;
+            font-weight: 700;
+            margin-bottom: 10px;
+        }
+
+        .footer-brand .logo span { color: var(--accent); }
+
+        .footer-brand p {
+            font-size: 13px;
+            color: var(--text-secondary);
+            line-height: 1.6;
+        }
+
+        .footer-col h4 {
+            font-size: 12px;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            color: var(--text-secondary);
+            margin-bottom: 14px;
+        }
+
+        .footer-col a {
+            display: block;
+            font-size: 14px;
+            color: var(--text);
+            text-decoration: none;
+            margin-bottom: 10px;
+            transition: color 0.2s;
+        }
+
+        .footer-col a:hover { color: var(--accent); }
+
+        .footer-bottom {
+            margin-top: 40px;
+            padding-top: 24px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .footer-bottom p {
+            font-size: 12px;
+            color: var(--text-secondary);
+        }
+
+        .footer-socials {
+            display: flex;
+            gap: 16px;
+        }
+
+        .footer-socials a {
+            color: var(--text-secondary);
+            transition: color 0.2s;
+        }
+
+        .footer-socials a:hover { color: var(--text); }
+
+        .footer-socials svg { width: 18px; height: 18px; }
+
+        /* ── Responsive ── */
+        @media (max-width: 900px) {
+            .features-grid, .why-grid { grid-template-columns: repeat(2, 1fr); }
+        }
+
+        @media (max-width: 600px) {
+            .hero h1 { font-size: 36px; }
+            .hero .subtitle { font-size: 17px; }
+            .section-title { font-size: 30px; }
+            .features-grid, .steps, .why-grid { grid-template-columns: 1fr; }
+            .footer-grid { grid-template-columns: 1fr; gap: 28px; }
+            .footer-bottom { flex-direction: column; gap: 12px; }
+            nav { padding: 14px 20px; }
+            .nav-links { gap: 16px; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- Nav -->
+    <nav>
+        <a href="https://corvusdevs.github.io" class="nav-brand">
+            <img src="https://avatars.githubusercontent.com/u/25494090?v=4" alt="CorvusDevs">
+            Corvus<span>Devs</span>
+        </a>
+        <div style="display:flex;align-items:center;">
+            <ul class="nav-links">
+                <li><a href="#features" data-i18n="nav_features">Features</a></li>
+                <li><a href="#how" data-i18n="nav_how">How it works</a></li>
+                <li><a href="mailto:corvusdevs@outlook.com" data-i18n="nav_contact">Contact</a></li>
+            </ul>
+            <div class="lang-wrap" id="langWrap">
+                <button class="lang-btn" id="langBtn">English</button>
+                <div class="lang-menu" id="langMenu">
+                    <button data-lang="en">English</button>
+                    <button data-lang="es">Español</button>
+                    <button data-lang="fr">Français</button>
+                    <button data-lang="de">Deutsch</button>
+                    <button data-lang="pt">Português</button>
+                    <button data-lang="it">Italiano</button>
+                    <button data-lang="ja">日本語</button>
+                    <button data-lang="ko">한국어</button>
+                    <button data-lang="ru">Русский</button>
+                </div>
+            </div>
+        </div>
+    </nav>
+
+    <!-- Hero -->
+    <section class="hero">
+        <img src="icon.png" alt="Purple Crow" class="hero-icon">
+        <h1 data-i18n-html="hero_title">Purple Crow<br>for Safari</h1>
+        <p class="subtitle" data-i18n="hero_sub">BTTV, FrankerFaceZ, and 7TV emotes in Safari — plus 50+ features to make Twitch better. Auto-claim, split chat, PiP, anonymous viewing, and more.</p>
+        <div class="hero-buttons">
+            <a href="https://apps.apple.com/app/id6761481948" class="hero-cta" id="storeBtn">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <span data-i18n="hero_cta_ios">Download for iOS</span>
+            </a>
+            <a href="https://apps.apple.com/app/id6761481948" class="hero-cta">
+                <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M18.71 19.5c-.83 1.24-1.71 2.45-3.05 2.47-1.34.03-1.77-.79-3.29-.79-1.53 0-2 .77-3.27.82-1.31.05-2.3-1.32-3.14-2.53C4.25 17 2.94 12.45 4.7 9.39c.87-1.52 2.43-2.48 4.12-2.51 1.28-.02 2.5.87 3.29.87.78 0 2.26-1.07 3.8-.91.65.03 2.47.26 3.64 1.98-.09.06-2.17 1.28-2.15 3.81.03 3.02 2.65 4.03 2.68 4.04-.03.07-.42 1.44-1.38 2.83M13 3.5c.73-.83 1.94-1.46 2.94-1.5.13 1.17-.34 2.35-1.04 3.19-.69.85-1.83 1.51-2.95 1.42-.15-1.15.41-2.35 1.05-3.11z"/></svg>
+                <span data-i18n="hero_cta_mac">Download for macOS</span>
+            </a>
+        </div>
+        <span class="hero-req" data-i18n="hero_req">Requires macOS 14.0 or iOS 17.0 or later</span>
+    </section>
+
+    <!-- Features -->
+    <section class="features" id="features">
+        <div class="section-label reveal" data-i18n="sec_features">Features</div>
+        <h2 class="section-title gradient-text reveal" data-i18n="sec_features_title">Everything Twitch should have built in</h2>
+
+        <div class="features-grid">
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><path d="M8 14s1.5 2 4 2 4-2 4-2"/><line x1="9" y1="9" x2="9.01" y2="9"/><line x1="15" y1="9" x2="15.01" y2="9"/></svg>
+                </div>
+                <h3 data-i18n="f1_t">Third-Party Emotes</h3>
+                <p data-i18n="f1_d">Full BetterTTV, FrankerFaceZ, and 7TV support with real-time updates. See every emote your favorite streamers use.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/><line x1="9" y1="10" x2="15" y2="10"/></svg>
+                </div>
+                <h3 data-i18n="f2_t">Split Chat</h3>
+                <p data-i18n="f2_d">Alternating message backgrounds with 11 color themes. Read fast-moving chats without losing your place.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 12 20 22 4 22 4 12"/><rect x="2" y="7" width="20" height="5"/><line x1="12" y1="22" x2="12" y2="7"/><path d="M12 7H7.5a2.5 2.5 0 0 1 0-5C11 2 12 7 12 7z"/><path d="M12 7h4.5a2.5 2.5 0 0 0 0-5C13 2 12 7 12 7z"/></svg>
+                </div>
+                <h3 data-i18n="f3_t">Auto-Claim</h3>
+                <p data-i18n="f3_d">Automatically collects channel points, Drops, Moments, and watch streaks. Never miss a reward again.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="3" width="20" height="14" rx="2"/><rect x="13" y="9" width="8" height="6" rx="1"/></svg>
+                </div>
+                <h3 data-i18n="f4_t">Picture-in-Picture</h3>
+                <p data-i18n="f4_d">One-click PiP button right in the player. Keep watching while you browse, work, or do anything else.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="17" y1="11" x2="23" y2="11"/></svg>
+                </div>
+                <h3 data-i18n="f5_t">Anonymous Viewing</h3>
+                <p data-i18n="f5_d">Watch streams without appearing in the viewer list. Your presence stays completely hidden.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="2.18"/><line x1="7" y1="2" x2="7" y2="22"/><line x1="17" y1="2" x2="17" y2="22"/><line x1="2" y1="12" x2="22" y2="12"/><line x1="2" y1="7" x2="7" y2="7"/><line x1="2" y1="17" x2="7" y2="17"/><line x1="17" y1="17" x2="22" y2="17"/><line x1="17" y1="7" x2="22" y2="7"/></svg>
+                </div>
+                <h3 data-i18n="f6_t">Theater & OLED Mode</h3>
+                <p data-i18n="f6_d">Auto theater mode with pure-black OLED backgrounds and transparent chat overlay. Cinematic viewing experience.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="11" cy="11" r="8"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+                </div>
+                <h3 data-i18n="f7_t">Chat Tools</h3>
+                <p data-i18n="f7_d">Timestamps, spoiler tags, emote tab-completion, spam filters, keyword highlights, and searchable chat history.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+                </div>
+                <h3 data-i18n="f8_t">Quality Control</h3>
+                <p data-i18n="f8_d">Force any video quality from 160p to Source. Persists across channel navigation — set it once and forget.</p>
+            </div>
+            <div class="feature-card reveal">
+                <div class="feature-icon">
+                    <svg viewBox="0 0 24 24" fill="none" stroke="#9147ff" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><line x1="2" y1="12" x2="22" y2="12"/><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"/></svg>
+                </div>
+                <h3 data-i18n="f9_t">19 Languages</h3>
+                <p data-i18n="f9_d">Fully localized in English, Spanish, French, German, Japanese, Korean, Portuguese, Chinese, and 11 more.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- How it works -->
+    <section class="how-it-works" id="how">
+        <div class="section-label reveal" data-i18n="sec_how">How it works</div>
+        <h2 class="section-title gradient-text reveal" data-i18n="sec_how_title">Up and running in seconds</h2>
+
+        <div class="steps">
+            <div class="step reveal">
+                <div class="step-num">1</div>
+                <h3 data-i18n="s1_t">Install from the App Store</h3>
+                <p data-i18n="s1_d">Download Purple Crow from the Mac App Store. It's a lightweight Safari extension.</p>
+            </div>
+            <div class="step reveal">
+                <div class="step-num">2</div>
+                <h3 data-i18n="s2_t">Enable in Safari</h3>
+                <p data-i18n="s2_d">Open Safari Settings, go to Extensions, and enable Purple Crow. Grant permission for twitch.tv.</p>
+            </div>
+            <div class="step reveal">
+                <div class="step-num">3</div>
+                <h3 data-i18n="s3_t">Enjoy Twitch</h3>
+                <p data-i18n="s3_d">Visit twitch.tv and everything works automatically. Emotes load, points get claimed, chat gets better.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why -->
+    <section class="why">
+        <div class="section-label reveal" data-i18n="sec_why">Why Purple Crow</div>
+        <h2 class="section-title gradient-text reveal" data-i18n="sec_why_title">Built for Safari users</h2>
+
+        <div class="why-grid">
+            <div class="why-card reveal">
+                <h3 data-i18n="w1_t">The emotes you're missing</h3>
+                <p data-i18n="w1_d">Thousands of community emotes from BTTV, FFZ, and 7TV are invisible in Safari. When chat spams a reaction and you just see text, that's the problem Purple Crow solves.</p>
+            </div>
+            <div class="why-card reveal">
+                <h3 data-i18n="w2_t">50+ quality-of-life features</h3>
+                <p data-i18n="w2_d">From auto-claiming channel points to split chat, PiP, anonymous viewing, screenshots, clip downloads, and spam filters — features that make Twitch genuinely better to use.</p>
+            </div>
+            <div class="why-card reveal">
+                <h3 data-i18n="w3_t">Native Safari extension</h3>
+                <p data-i18n="w3_d">Not a Chrome extension ported to Safari. Purple Crow is built specifically for Safari with native performance, no background processes, and zero data collection.</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Requirements -->
+    <p class="req" data-i18n="req">Requires macOS 14.0 (Sonoma) or later. Works with Safari 17+.</p>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-grid">
+            <div class="footer-brand">
+                <div class="logo"><img src="https://avatars.githubusercontent.com/u/25494090?v=4" alt="CorvusDevs" style="width:22px;height:22px;border-radius:5px;vertical-align:middle;margin-right:6px;">Corvus<span>Devs</span></div>
+                <p data-i18n="f_brand">Indie macOS software studio.<br>Building focused, privacy-first tools.</p>
+            </div>
+            <div class="footer-col">
+                <h4 data-i18n="f_legal">Legal</h4>
+                <a href="privacy" data-i18n="f_privacy">Privacy Policy</a>
+                <a href="terms" data-i18n="f_terms">Terms of Service</a>
+            </div>
+            <div class="footer-col">
+                <h4 data-i18n="f_connect">Connect</h4>
+                <a href="mailto:corvusdevs@outlook.com">corvusdevs@outlook.com</a>
+                <a href="https://github.com/CorvusDevs">GitHub</a>
+            </div>
+        </div>
+        <div class="footer-bottom">
+            <p>&copy; 2026 CorvusDevs. All rights reserved.</p>
+            <div class="footer-socials">
+                <a href="https://github.com/CorvusDevs" aria-label="GitHub">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0024 12c0-6.63-5.37-12-12-12z"/></svg>
+                </a>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+    // Scroll reveal via IntersectionObserver
+    (function() {
+        var observer = new IntersectionObserver(function(entries) {
+            entries.forEach(function(entry) {
+                if (entry.isIntersecting) {
+                    entry.target.classList.add('visible');
+                    observer.unobserve(entry.target);
+                }
+            });
+        }, { threshold: 0.1, rootMargin: '0px 0px -40px 0px' });
+        document.querySelectorAll('.reveal').forEach(function(el) {
+            observer.observe(el);
+        });
+    })();
+
+    const T = {
+        en: {
+            nav_features:"Features", nav_how:"How it works", nav_contact:"Contact",
+            hero_title:"Purple Crow<br>for Safari", hero_sub:"BTTV, FrankerFaceZ, and 7TV emotes in Safari — plus 50+ features to make Twitch better. Auto-claim, split chat, PiP, anonymous viewing, and more.", hero_cta_ios:"Download for iOS", hero_cta_mac:"Download for macOS", hero_req:"Requires macOS 14.0 or iOS 17.0 or later",
+            sec_features:"Features", sec_features_title:"Everything Twitch should have built in",
+            f1_t:"Third-Party Emotes", f1_d:"Full BetterTTV, FrankerFaceZ, and 7TV support with real-time updates. See every emote your favorite streamers use.",
+            f2_t:"Split Chat", f2_d:"Alternating message backgrounds with 11 color themes. Read fast-moving chats without losing your place.",
+            f3_t:"Auto-Claim", f3_d:"Automatically collects channel points, Drops, Moments, and watch streaks. Never miss a reward again.",
+            f4_t:"Picture-in-Picture", f4_d:"One-click PiP button right in the player. Keep watching while you browse, work, or do anything else.",
+            f5_t:"Anonymous Viewing", f5_d:"Watch streams without appearing in the viewer list. Your presence stays completely hidden.",
+            f6_t:"Theater & OLED Mode", f6_d:"Auto theater mode with pure-black OLED backgrounds and transparent chat overlay. Cinematic viewing experience.",
+            f7_t:"Chat Tools", f7_d:"Timestamps, spoiler tags, emote tab-completion, spam filters, keyword highlights, and searchable chat history.",
+            f8_t:"Quality Control", f8_d:"Force any video quality from 160p to Source. Persists across channel navigation \u2014 set it once and forget.",
+            f9_t:"19 Languages", f9_d:"Fully localized in English, Spanish, French, German, Japanese, Korean, Portuguese, Chinese, and 11 more.",
+            sec_how:"How it works", sec_how_title:"Up and running in seconds",
+            s1_t:"Install from the App Store", s1_d:"Download Purple Crow from the Mac App Store. It\u2019s a lightweight Safari extension.",
+            s2_t:"Enable in Safari", s2_d:"Open Safari Settings, go to Extensions, and enable Purple Crow. Grant permission for twitch.tv.",
+            s3_t:"Enjoy Twitch", s3_d:"Visit twitch.tv and everything works automatically. Emotes load, points get claimed, chat gets better.",
+            sec_why:"Why Purple Crow", sec_why_title:"Built for Safari users",
+            w1_t:"The emotes you\u2019re missing", w1_d:"Thousands of community emotes from BTTV, FFZ, and 7TV are invisible in Safari. When chat spams a reaction and you just see text, that\u2019s the problem Purple Crow solves.",
+            w2_t:"50+ quality-of-life features", w2_d:"From auto-claiming channel points to split chat, PiP, anonymous viewing, screenshots, clip downloads, and spam filters \u2014 features that make Twitch genuinely better to use.",
+            w3_t:"Native Safari extension", w3_d:"Not a Chrome extension ported to Safari. Purple Crow is built specifically for Safari with native performance, no background processes, and zero data collection.",
+            req:"Requires macOS 14.0 (Sonoma) or later. Works with Safari 17+.",
+            f_brand:"Indie macOS software studio.<br>Building focused, privacy-first tools.",
+            f_legal:"Legal", f_privacy:"Privacy Policy", f_terms:"Terms of Service", f_connect:"Connect",
+        },
+        es: {
+            nav_features:"Funciones", nav_how:"Cómo funciona", nav_contact:"Contacto",
+            hero_title:"Purple Crow<br>para Safari", hero_sub:"Emotes de BTTV, FrankerFaceZ y 7TV en Safari — además de más de 50 funciones para mejorar Twitch. Auto-claim, split chat, PiP, modo anónimo y más.", hero_cta_ios:"Descargar para iOS", hero_cta_mac:"Descargar para macOS", hero_req:"Requiere macOS 14.0 o iOS 17.0 o posterior",
+            sec_features:"Funciones", sec_features_title:"Todo lo que Twitch debería haber incluido",
+            f1_t:"Emotes de Terceros", f1_d:"Soporte completo de BetterTTV, FrankerFaceZ y 7TV con actualizaciones en tiempo real. Ve cada emote que usan tus streamers favoritos.",
+            f2_t:"Chat Dividido", f2_d:"Fondos alternos de mensajes con 11 temas de color. Lee chats rápidos sin perder tu lugar.",
+            f3_t:"Auto-Reclamar", f3_d:"Reclama automáticamente puntos de canal, Drops, Momentos y rachas. Nunca te pierdas una recompensa.",
+            f4_t:"Picture-in-Picture", f4_d:"Botón PiP con un clic directo en el reproductor. Sigue viendo mientras navegas o trabajas.",
+            f5_t:"Vista Anónima", f5_d:"Ve streams sin aparecer en la lista de espectadores. Tu presencia queda completamente oculta.",
+            f6_t:"Teatro y Modo OLED", f6_d:"Modo teatro automático con fondos OLED negro puro y chat transparente. Experiencia cinematográfica.",
+            f7_t:"Herramientas de Chat", f7_d:"Marcas de tiempo, spoilers, autocompletado de emotes, filtros de spam, palabras clave y búsqueda en el chat.",
+            f8_t:"Control de Calidad", f8_d:"Fuerza cualquier calidad de video de 160p a Fuente. Persiste entre canales — configúralo una vez.",
+            f9_t:"19 Idiomas", f9_d:"Completamente localizado en español, inglés, francés, alemán, japonés, coreano, portugués, chino y 11 más.",
+            sec_how:"Cómo funciona", sec_how_title:"Listo en segundos",
+            s1_t:"Instala desde la App Store", s1_d:"Descarga Purple Crow desde la Mac App Store. Es una extensión ligera de Safari.",
+            s2_t:"Activa en Safari", s2_d:"Abre Ajustes de Safari, ve a Extensiones y activa Purple Crow. Concede permiso para twitch.tv.",
+            s3_t:"Disfruta Twitch", s3_d:"Visita twitch.tv y todo funciona automáticamente. Los emotes cargan, los puntos se reclaman, el chat mejora.",
+            sec_why:"Por qué Purple Crow", sec_why_title:"Hecho para usuarios de Safari",
+            w1_t:"Los emotes que te faltan", w1_d:"Miles de emotes de BTTV, FFZ y 7TV son invisibles en Safari. Cuando el chat reacciona y solo ves texto, ese es el problema que Purple Crow resuelve.",
+            w2_t:"Más de 50 mejoras", w2_d:"Desde auto-reclamar puntos hasta split chat, PiP, vista anónima, capturas, descargas de clips y filtros de spam — funciones que mejoran Twitch de verdad.",
+            w3_t:"Extensión nativa de Safari", w3_d:"No es una extensión de Chrome portada a Safari. Purple Crow está diseñado específicamente para Safari con rendimiento nativo y cero recopilación de datos.",
+            req:"Requiere macOS 14.0 (Sonoma) o posterior. Funciona con Safari 17+.",
+            f_brand:"Estudio indie de software para macOS.<br>Herramientas enfocadas y privadas.",
+            f_legal:"Legal", f_privacy:"Política de Privacidad", f_terms:"Términos de Servicio", f_connect:"Contacto",
+        },
+        fr: {
+            nav_features:"Fonctions", nav_how:"Comment ça marche", nav_contact:"Contact",
+            hero_title:"Purple Crow<br>pour Safari", hero_sub:"Les emotes BTTV, FrankerFaceZ et 7TV dans Safari — plus de 50 fonctionnalités pour améliorer Twitch. Auto-claim, split chat, PiP, mode anonyme et plus.", hero_cta_ios:"Télécharger pour iOS", hero_cta_mac:"Télécharger pour macOS", hero_req:"Nécessite macOS 14.0 ou iOS 17.0 ou ultérieur",
+            sec_features:"Fonctions", sec_features_title:"Tout ce que Twitch aurait dû inclure",
+            f1_t:"Emotes Tiers", f1_d:"Support complet de BetterTTV, FrankerFaceZ et 7TV avec mises à jour en temps réel.",
+            f2_t:"Chat Alterné", f2_d:"Arrière-plans de messages alternés avec 11 thèmes de couleurs. Lisez les chats rapides facilement.",
+            f3_t:"Auto-Réclamation", f3_d:"Réclame automatiquement les points de chaîne, Drops, Moments et séries. Ne manquez plus jamais une récompense.",
+            f4_t:"Picture-in-Picture", f4_d:"Bouton PiP en un clic dans le lecteur. Continuez à regarder pendant que vous naviguez ou travaillez.",
+            f5_t:"Vue Anonyme", f5_d:"Regardez les streams sans apparaître dans la liste des spectateurs. Votre présence reste cachée.",
+            f6_t:"Théâtre & Mode OLED", f6_d:"Mode théâtre automatique avec fond noir OLED et chat transparent. Expérience cinématographique.",
+            f7_t:"Outils de Chat", f7_d:"Horodatages, spoilers, auto-complétion d'emotes, filtres anti-spam, mots-clés et recherche dans le chat.",
+            f8_t:"Contrôle Qualité", f8_d:"Forcez n'importe quelle qualité vidéo de 160p à Source. Persiste entre les chaînes.",
+            f9_t:"19 Langues", f9_d:"Entièrement localisé en français, anglais, espagnol, allemand, japonais, coréen, portugais, chinois et 11 autres.",
+            sec_how:"Comment ça marche", sec_how_title:"Prêt en quelques secondes",
+            s1_t:"Installez depuis l'App Store", s1_d:"Téléchargez Purple Crow depuis le Mac App Store.",
+            s2_t:"Activez dans Safari", s2_d:"Ouvrez les Réglages Safari, allez dans Extensions et activez Purple Crow.",
+            s3_t:"Profitez de Twitch", s3_d:"Visitez twitch.tv et tout fonctionne automatiquement.",
+            sec_why:"Pourquoi Purple Crow", sec_why_title:"Conçu pour les utilisateurs Safari",
+            w1_t:"Les emotes qui vous manquent", w1_d:"Des milliers d'emotes communautaires de BTTV, FFZ et 7TV sont invisibles dans Safari.",
+            w2_t:"Plus de 50 améliorations", w2_d:"De l'auto-réclamation au split chat, PiP, vue anonyme, captures d'écran et filtres anti-spam.",
+            w3_t:"Extension Safari native", w3_d:"Pas une extension Chrome portée. Purple Crow est conçu spécifiquement pour Safari avec des performances natives.",
+            req:"Nécessite macOS 14.0 (Sonoma) ou ultérieur. Fonctionne avec Safari 17+.",
+            f_brand:"Studio indie de logiciels macOS.<br>Outils ciblés et respectueux de la vie privée.",
+            f_legal:"Juridique", f_privacy:"Politique de confidentialité", f_terms:"Conditions d'utilisation", f_connect:"Contact",
+        },
+        de: {
+            nav_features:"Funktionen", nav_how:"So funktioniert's", nav_contact:"Kontakt",
+            hero_title:"Purple Crow<br>für Safari", hero_sub:"BTTV-, FrankerFaceZ- und 7TV-Emotes in Safari — plus 50+ Funktionen für ein besseres Twitch. Auto-Claim, Split Chat, PiP, anonymes Zuschauen und mehr.", hero_cta_ios:"Für iOS laden", hero_cta_mac:"Für macOS laden", hero_req:"Erfordert macOS 14.0 oder iOS 17.0 oder neuer",
+            sec_features:"Funktionen", sec_features_title:"Alles, was Twitch hätte einbauen sollen",
+            f1_t:"Drittanbieter-Emotes", f1_d:"Volle Unterstützung für BetterTTV, FrankerFaceZ und 7TV mit Echtzeit-Updates.",
+            f2_t:"Split Chat", f2_d:"Abwechselnde Nachrichtenhintergründe mit 11 Farbthemen. Schnelle Chats leichter lesen.",
+            f3_t:"Auto-Claim", f3_d:"Sammelt automatisch Kanalpunkte, Drops, Momente und Serien. Keine Belohnung mehr verpassen.",
+            f4_t:"Bild-in-Bild", f4_d:"PiP-Button mit einem Klick im Player. Weiter schauen, während Sie arbeiten.",
+            f5_t:"Anonymes Zuschauen", f5_d:"Streams schauen, ohne in der Zuschauerliste zu erscheinen.",
+            f6_t:"Theater & OLED-Modus", f6_d:"Auto-Theatermodus mit OLED-schwarzem Hintergrund und transparentem Chat-Overlay.",
+            f7_t:"Chat-Werkzeuge", f7_d:"Zeitstempel, Spoiler-Tags, Emote-Vervollständigung, Spam-Filter, Stichwort-Hervorhebung und Chat-Suche.",
+            f8_t:"Qualitätskontrolle", f8_d:"Erzwingen Sie jede Videoqualität von 160p bis Source. Bleibt über Kanalwechsel bestehen.",
+            f9_t:"19 Sprachen", f9_d:"Vollständig lokalisiert in Deutsch, Englisch, Spanisch, Französisch, Japanisch, Koreanisch und 12 weitere.",
+            sec_how:"So funktioniert's", sec_how_title:"In Sekunden einsatzbereit",
+            s1_t:"Aus dem App Store laden", s1_d:"Laden Sie Purple Crow aus dem Mac App Store herunter.",
+            s2_t:"In Safari aktivieren", s2_d:"Öffnen Sie Safari-Einstellungen, gehen Sie zu Erweiterungen und aktivieren Sie Purple Crow.",
+            s3_t:"Twitch genießen", s3_d:"Besuchen Sie twitch.tv und alles funktioniert automatisch.",
+            sec_why:"Warum Purple Crow", sec_why_title:"Für Safari-Nutzer gemacht",
+            w1_t:"Die Emotes, die Ihnen fehlen", w1_d:"Tausende Community-Emotes von BTTV, FFZ und 7TV sind in Safari unsichtbar.",
+            w2_t:"50+ Verbesserungen", w2_d:"Von Auto-Claim bis Split Chat, PiP, anonymem Zuschauen, Screenshots und Spam-Filtern.",
+            w3_t:"Native Safari-Erweiterung", w3_d:"Keine portierte Chrome-Erweiterung. Purple Crow wurde speziell für Safari entwickelt.",
+            req:"Erfordert macOS 14.0 (Sonoma) oder neuer. Funktioniert mit Safari 17+.",
+            f_brand:"Indie macOS Software Studio.<br>Fokussierte, datenschutzfreundliche Tools.",
+            f_legal:"Rechtliches", f_privacy:"Datenschutz", f_terms:"Nutzungsbedingungen", f_connect:"Kontakt",
+        },
+        pt: {
+            nav_features:"Recursos", nav_how:"Como funciona", nav_contact:"Contato",
+            hero_title:"Purple Crow<br>para Safari", hero_sub:"Emotes BTTV, FrankerFaceZ e 7TV no Safari — além de 50+ recursos para melhorar o Twitch.", hero_cta_ios:"Baixar para iOS", hero_cta_mac:"Baixar para macOS", hero_req:"Requer macOS 14.0 ou iOS 17.0 ou posterior",
+            sec_features:"Recursos", sec_features_title:"Tudo que o Twitch deveria ter incluso",
+            f1_t:"Emotes de Terceiros", f1_d:"Suporte completo a BetterTTV, FrankerFaceZ e 7TV com atualizações em tempo real.",
+            f2_t:"Chat Dividido", f2_d:"Fundos alternados de mensagens com 11 temas de cores. Leia chats rápidos facilmente.",
+            f3_t:"Auto-Coleta", f3_d:"Coleta automaticamente pontos de canal, Drops, Momentos e sequências.",
+            f4_t:"Picture-in-Picture", f4_d:"Botão PiP com um clique no player. Continue assistindo enquanto navega.",
+            f5_t:"Visualização Anônima", f5_d:"Assista streams sem aparecer na lista de espectadores.",
+            f6_t:"Teatro & Modo OLED", f6_d:"Modo teatro automático com fundo OLED preto e chat transparente.",
+            f7_t:"Ferramentas de Chat", f7_d:"Timestamps, spoilers, auto-completar emotes, filtros de spam e busca no chat.",
+            f8_t:"Controle de Qualidade", f8_d:"Force qualquer qualidade de 160p a Fonte. Persiste entre canais.",
+            f9_t:"19 Idiomas", f9_d:"Totalmente localizado em português, inglês, espanhol, francês, alemão e 14 outros.",
+            sec_how:"Como funciona", sec_how_title:"Pronto em segundos",
+            s1_t:"Instale da App Store", s1_d:"Baixe Purple Crow na Mac App Store.",
+            s2_t:"Ative no Safari", s2_d:"Abra Ajustes do Safari, vá em Extensões e ative o Purple Crow.",
+            s3_t:"Aproveite o Twitch", s3_d:"Visite twitch.tv e tudo funciona automaticamente.",
+            sec_why:"Por que Purple Crow", sec_why_title:"Feito para usuários Safari",
+            w1_t:"Os emotes que você está perdendo", w1_d:"Milhares de emotes de BTTV, FFZ e 7TV são invisíveis no Safari.",
+            w2_t:"50+ melhorias", w2_d:"De auto-coleta a split chat, PiP, visualização anônima e filtros de spam.",
+            w3_t:"Extensão Safari nativa", w3_d:"Não é uma extensão Chrome portada. Purple Crow foi feito para Safari com performance nativa.",
+            req:"Requer macOS 14.0 (Sonoma) ou posterior. Funciona com Safari 17+.",
+            f_brand:"Estúdio indie de software macOS.<br>Ferramentas focadas e privadas.",
+            f_legal:"Legal", f_privacy:"Política de Privacidade", f_terms:"Termos de Serviço", f_connect:"Contato",
+        },
+        it: {
+            nav_features:"Funzioni", nav_how:"Come funziona", nav_contact:"Contatto",
+            hero_title:"Purple Crow<br>per Safari", hero_sub:"Emote BTTV, FrankerFaceZ e 7TV in Safari — più di 50 funzionalità per migliorare Twitch.", hero_cta_ios:"Scarica per iOS", hero_cta_mac:"Scarica per macOS", hero_req:"Richiede macOS 14.0 o iOS 17.0 o successivo",
+            sec_features:"Funzioni", sec_features_title:"Tutto ciò che Twitch avrebbe dovuto includere",
+            f1_t:"Emote di Terze Parti", f1_d:"Supporto completo per BetterTTV, FrankerFaceZ e 7TV con aggiornamenti in tempo reale.",
+            f2_t:"Chat Alternato", f2_d:"Sfondi alternati dei messaggi con 11 temi colore. Leggi chat veloci senza perdere il filo.",
+            f3_t:"Auto-Riscatto", f3_d:"Riscatta automaticamente punti canale, Drop, Momenti e serie. Non perderti mai una ricompensa.",
+            f4_t:"Picture-in-Picture", f4_d:"Pulsante PiP con un clic nel player. Continua a guardare mentre navighi.",
+            f5_t:"Visualizzazione Anonima", f5_d:"Guarda le stream senza apparire nella lista spettatori.",
+            f6_t:"Teatro & Modo OLED", f6_d:"Modalità teatro automatica con sfondo OLED nero e chat trasparente.",
+            f7_t:"Strumenti Chat", f7_d:"Timestamp, spoiler, auto-completamento emote, filtri spam e ricerca nella chat.",
+            f8_t:"Controllo Qualità", f8_d:"Forza qualsiasi qualità da 160p a Sorgente. Persiste tra i canali.",
+            f9_t:"19 Lingue", f9_d:"Completamente localizzato in italiano, inglese, spagnolo, francese, tedesco e 14 altre lingue.",
+            sec_how:"Come funziona", sec_how_title:"Pronto in pochi secondi",
+            s1_t:"Installa dall'App Store", s1_d:"Scarica Purple Crow dal Mac App Store.",
+            s2_t:"Attiva in Safari", s2_d:"Apri Impostazioni Safari, vai su Estensioni e attiva Purple Crow.",
+            s3_t:"Goditi Twitch", s3_d:"Visita twitch.tv e tutto funziona automaticamente.",
+            sec_why:"Perché Purple Crow", sec_why_title:"Fatto per gli utenti Safari",
+            w1_t:"Le emote che ti mancano", w1_d:"Migliaia di emote di BTTV, FFZ e 7TV sono invisibili in Safari.",
+            w2_t:"Oltre 50 miglioramenti", w2_d:"Dall'auto-riscatto al split chat, PiP, vista anonima e filtri anti-spam.",
+            w3_t:"Estensione Safari nativa", w3_d:"Non una estensione Chrome portata. Purple Crow è progettato per Safari.",
+            req:"Richiede macOS 14.0 (Sonoma) o successivo. Funziona con Safari 17+.",
+            f_brand:"Studio indie di software macOS.<br>Strumenti mirati e rispettosi della privacy.",
+            f_legal:"Legale", f_privacy:"Privacy", f_terms:"Termini", f_connect:"Contatto",
+        },
+        ja: {
+            nav_features:"機能", nav_how:"使い方", nav_contact:"お問い合わせ",
+            hero_title:"Purple Crow<br>for Safari", hero_sub:"SafariでBTTV、FrankerFaceZ、7TVのエモートを表示。50以上の機能でTwitchをもっと快適に。", hero_cta_ios:"iOS版をダウンロード", hero_cta_mac:"macOS版をダウンロード", hero_req:"macOS 14.0またはiOS 17.0以降が必要",
+            sec_features:"機能", sec_features_title:"Twitchに本来あるべきだった機能",
+            f1_t:"サードパーティエモート", f1_d:"BetterTTV、FrankerFaceZ、7TVをリアルタイム更新で完全サポート。",
+            f2_t:"スプリットチャット", f2_d:"11のカラーテーマで交互背景表示。高速チャットでも読みやすい。",
+            f3_t:"自動収集", f3_d:"チャンネルポイント、ドロップ、モーメント、ストリークを自動で収集。",
+            f4_t:"ピクチャ・イン・ピクチャ", f4_d:"プレーヤーのワンクリックPiPボタン。他の作業をしながら視聴を続行。",
+            f5_t:"匿名視聴", f5_d:"視聴者リストに表示されずにストリームを視聴。",
+            f6_t:"シアター＆OLEDモード", f6_d:"OLEDブラック背景と透明チャットオーバーレイによる映画的な視聴体験。",
+            f7_t:"チャットツール", f7_d:"タイムスタンプ、スポイラー、エモート補完、スパムフィルター、キーワードハイライト、チャット検索。",
+            f8_t:"画質コントロール", f8_d:"160pからソースまで任意の画質を強制。チャンネル移動間で維持。",
+            f9_t:"19言語対応", f9_d:"日本語、英語、スペイン語、フランス語、ドイツ語、韓国語など19言語に完全対応。",
+            sec_how:"使い方", sec_how_title:"数秒で準備完了",
+            s1_t:"App Storeからインストール", s1_d:"Mac App StoreからPurple Crowをダウンロード。",
+            s2_t:"Safariで有効化", s2_d:"Safari設定の機能拡張からPurple Crowを有効にしてください。",
+            s3_t:"Twitchを楽しむ", s3_d:"twitch.tvにアクセスすれば、すべてが自動で動作します。",
+            sec_why:"なぜPurple Crow", sec_why_title:"Safariユーザーのために",
+            w1_t:"見えないエモート", w1_d:"BTTV、FFZ、7TVの数千のコミュニティエモートはSafariでは表示されません。",
+            w2_t:"50以上の改善", w2_d:"自動収集からスプリットチャット、PiP、匿名視聴、スクリーンショット、スパムフィルターまで。",
+            w3_t:"Safariネイティブ拡張", w3_d:"Chrome拡張の移植ではありません。Purple CrowはSafari専用に設計されています。",
+            req:"macOS 14.0（Sonoma）以降が必要。Safari 17+に対応。",
+            f_brand:"インディーmacOSソフトウェアスタジオ。",
+            f_legal:"法的情報", f_privacy:"プライバシー", f_terms:"利用規約", f_connect:"お問い合わせ",
+        },
+        ko: {
+            nav_features:"기능", nav_how:"사용법", nav_contact:"문의",
+            hero_title:"Purple Crow<br>for Safari", hero_sub:"Safari에서 BTTV, FrankerFaceZ, 7TV 이모트를 사용하세요. 50개 이상의 기능으로 Twitch를 더 좋게 만듭니다.", hero_cta_ios:"iOS용 다운로드", hero_cta_mac:"macOS용 다운로드", hero_req:"macOS 14.0 또는 iOS 17.0 이상 필요",
+            sec_features:"기능", sec_features_title:"Twitch에 있었어야 할 모든 것",
+            f1_t:"서드파티 이모트", f1_d:"BetterTTV, FrankerFaceZ, 7TV 실시간 업데이트 완전 지원.",
+            f2_t:"분할 채팅", f2_d:"11가지 색상 테마로 메시지 배경을 번갈아 표시. 빠른 채팅도 쉽게 읽기.",
+            f3_t:"자동 수집", f3_d:"채널 포인트, 드롭, 모멘트, 스트릭을 자동으로 수집.",
+            f4_t:"PIP", f4_d:"플레이어의 원클릭 PiP 버튼. 다른 작업을 하면서 계속 시청.",
+            f5_t:"익명 시청", f5_d:"시청자 목록에 나타나지 않고 스트림을 시청하세요.",
+            f6_t:"시어터 & OLED 모드", f6_d:"OLED 블랙 배경과 투명 채팅 오버레이로 극장 같은 시청 경험.",
+            f7_t:"채팅 도구", f7_d:"타임스탬프, 스포일러 태그, 이모트 탭 완성, 스팸 필터, 키워드 하이라이트, 채팅 검색.",
+            f8_t:"화질 제어", f8_d:"160p부터 소스까지 원하는 화질을 강제 적용. 채널 이동 간 유지.",
+            f9_t:"19개 언어", f9_d:"한국어, 영어, 스페인어, 프랑스어, 독일어, 일본어 등 19개 언어 완전 지원.",
+            sec_how:"사용법", sec_how_title:"몇 초 만에 시작",
+            s1_t:"App Store에서 설치", s1_d:"Mac App Store에서 Purple Crow를 다운로드.",
+            s2_t:"Safari에서 활성화", s2_d:"Safari 설정의 확장프로그램에서 Purple Crow를 활성화하세요.",
+            s3_t:"Twitch 즐기기", s3_d:"twitch.tv를 방문하면 모든 것이 자동으로 작동합니다.",
+            sec_why:"왜 Purple Crow", sec_why_title:"Safari 사용자를 위해 제작",
+            w1_t:"보이지 않는 이모트", w1_d:"BTTV, FFZ, 7TV의 수천 개 커뮤니티 이모트가 Safari에서는 보이지 않습니다.",
+            w2_t:"50개 이상의 개선", w2_d:"자동 수집부터 분할 채팅, PiP, 익명 시청, 스크린샷, 스팸 필터까지.",
+            w3_t:"네이티브 Safari 확장", w3_d:"Chrome 확장의 포팅이 아닙니다. Safari 전용으로 설계되었습니다.",
+            req:"macOS 14.0 (Sonoma) 이상 필요. Safari 17+ 지원.",
+            f_brand:"인디 macOS 소프트웨어 스튜디오.",
+            f_legal:"법적 고지", f_privacy:"개인정보 처리방침", f_terms:"이용약관", f_connect:"연락처",
+        },
+        ru: {
+            nav_features:"Функции", nav_how:"Как это работает", nav_contact:"Контакты",
+            hero_title:"Purple Crow<br>для Safari", hero_sub:"Эмоуты BTTV, FrankerFaceZ и 7TV в Safari — плюс 50+ функций для улучшения Twitch.", hero_cta_ios:"Скачать для iOS", hero_cta_mac:"Скачать для macOS", hero_req:"Требуется macOS 14.0 или iOS 17.0 или новее",
+            sec_features:"Функции", sec_features_title:"Всё, что Twitch должен был добавить",
+            f1_t:"Сторонние эмоуты", f1_d:"Полная поддержка BetterTTV, FrankerFaceZ и 7TV с обновлениями в реальном времени.",
+            f2_t:"Раздельный чат", f2_d:"Чередующиеся фоны сообщений с 11 цветовыми темами.",
+            f3_t:"Авто-сбор", f3_d:"Автоматически собирает очки канала, Дропы, Моменты и серии.",
+            f4_t:"Картинка-в-картинке", f4_d:"Кнопка PiP одним кликом в плеере. Смотрите, пока работаете.",
+            f5_t:"Анонимный просмотр", f5_d:"Смотрите стримы, не появляясь в списке зрителей.",
+            f6_t:"Театр & OLED режим", f6_d:"Автоматический театральный режим с OLED-чёрным фоном и прозрачным чатом.",
+            f7_t:"Инструменты чата", f7_d:"Временные метки, спойлеры, автодополнение эмоутов, фильтры спама и поиск по чату.",
+            f8_t:"Контроль качества", f8_d:"Принудительное качество от 160p до Source. Сохраняется между каналами.",
+            f9_t:"19 языков", f9_d:"Полная локализация на русском, английском, испанском, французском, немецком и ещё 14 языках.",
+            sec_how:"Как это работает", sec_how_title:"Готово за секунды",
+            s1_t:"Установите из App Store", s1_d:"Скачайте Purple Crow из Mac App Store.",
+            s2_t:"Включите в Safari", s2_d:"Откройте Настройки Safari, перейдите в Расширения и включите Purple Crow.",
+            s3_t:"Наслаждайтесь Twitch", s3_d:"Перейдите на twitch.tv и всё работает автоматически.",
+            sec_why:"Почему Purple Crow", sec_why_title:"Создано для пользователей Safari",
+            w1_t:"Эмоуты, которые вы не видите", w1_d:"Тысячи эмоутов BTTV, FFZ и 7TV невидимы в Safari.",
+            w2_t:"50+ улучшений", w2_d:"От авто-сбора до раздельного чата, PiP, анонимного просмотра и фильтров спама.",
+            w3_t:"Нативное расширение Safari", w3_d:"Не портированное расширение Chrome. Purple Crow создан специально для Safari.",
+            req:"Требуется macOS 14.0 (Sonoma) или новее. Работает с Safari 17+.",
+            f_brand:"Инди-студия macOS софта.",
+            f_legal:"Правовая информация", f_privacy:"Конфиденциальность", f_terms:"Условия", f_connect:"Связь",
+        },
+    };
+
+    const langLabels = {en:"English",es:"Español",fr:"Français",de:"Deutsch",pt:"Português",it:"Italiano",ja:"日本語",ko:"한국어",ru:"Русский"};
+
+    function setLanguage(lang) {
+        const s = T[lang] || T.en;
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            const k = el.getAttribute("data-i18n");
+            if (s[k]) el.textContent = s[k];
+        });
+        document.querySelectorAll("[data-i18n-html]").forEach(el => {
+            const k = el.getAttribute("data-i18n-html");
+            if (s[k]) el.innerHTML = s[k];
+        });
+        document.documentElement.lang = lang;
+        localStorage.setItem("tp-lang", lang);
+        document.getElementById("langBtn").textContent = langLabels[lang] || langLabels.en;
+        document.querySelectorAll("#langMenu button").forEach(b => {
+            b.classList.toggle("active", b.dataset.lang === lang);
+        });
+        document.getElementById("langMenu").classList.remove("open");
+    }
+
+    // Custom dropdown toggle
+    document.getElementById("langBtn").addEventListener("click", (e) => {
+        e.stopPropagation();
+        document.getElementById("langMenu").classList.toggle("open");
+    });
+    document.getElementById("langMenu").addEventListener("click", (e) => {
+        const btn = e.target.closest("[data-lang]");
+        if (btn) setLanguage(btn.dataset.lang);
+    });
+    document.addEventListener("click", () => document.getElementById("langMenu").classList.remove("open"));
+
+    (function() {
+        const saved = localStorage.getItem("tp-lang");
+        if (saved && T[saved]) { setLanguage(saved); return; }
+        const bl = (navigator.language || "en").split("-")[0];
+        if (T[bl]) setLanguage(bl);
+    })();
+    </script>
+<!-- Cloudflare Web Analytics --><script defer src='https://static.cloudflareinsights.com/beacon.min.js' data-cf-beacon='{"token": "36ef79985b2045c4b271333fe4e427ab"}'></script><!-- End Cloudflare Web Analytics -->
+</body>
+</html>
