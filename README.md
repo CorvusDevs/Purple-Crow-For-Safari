@@ -1,5 +1,5 @@
 <div align="center">
-  <img src="icon.png" width="128" height="128" alt="Purple Crow icon" style="border-radius: 22%;">
+  <img src="https://corvusdevs.github.io/Purple-Crow-For-Safari/icon.png" width="128" height="128" alt="Purple Crow icon">
   <h1>Purple Crow for Safari</h1>
   <p><strong>BTTV, FFZ, 7TV & 50+ features for Twitch on Safari</strong></p>
   <p>
@@ -12,7 +12,6 @@
     <img src="https://img.shields.io/badge/iOS-17.0+-000000?style=flat-square&logo=apple&logoColor=white" alt="iOS 17.0+">
     <img src="https://img.shields.io/badge/iPadOS-17.0+-000000?style=flat-square&logo=apple&logoColor=white" alt="iPadOS 17.0+">
     <img src="https://img.shields.io/badge/Languages-23-4CAF50?style=flat-square" alt="23 Languages">
-    <img src="https://img.shields.io/badge/Price-Free-34C759?style=flat-square" alt="Free">
   </p>
   <p>
     <a href="https://corvusdevs.github.io/Purple-Crow-For-Safari/">Website</a>
@@ -24,7 +23,7 @@
 Purple Crow brings BetterTTV, FrankerFaceZ, and 7TV emotes to Safari — along with 50+ quality-of-life features to make Twitch better. Auto-claim channel points, split chat, Picture-in-Picture, anonymous viewing, and much more.
 
 <div align="center">
-  <img src="og-image.png" width="720" alt="Purple Crow for Safari screenshot">
+  <img src="https://corvusdevs.github.io/Purple-Crow-For-Safari/og-image.png" width="720" alt="Purple Crow for Safari screenshot">
 </div>
 
 ## Features
