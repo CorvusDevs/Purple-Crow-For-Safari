@@ -1,5 +1,4 @@
 <div align="center">
-  <img src="https://corvusdevs.github.io/Purple-Crow-For-Safari/icon.png" width="128" height="128" alt="Purple Crow icon">
   <h1>Purple Crow for Safari</h1>
   <p><strong>BTTV, FFZ, 7TV & 50+ features for Twitch on Safari</strong></p>
   <p>
