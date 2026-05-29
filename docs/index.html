@@ -2,6 +2,9 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
+    <script>/* Warm the CorvusDevs apps registry during parse so the "More from
+       CorvusDevs" carousel has its data ready by the time its script runs. */
+    window.__corvusAppsPromise=fetch('https://corvusdevs.github.io/apps.json',{cache:'default'}).then(function(r){return r.ok?r.json():null;}).catch(function(){return null;});</script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Purple Crow for Safari, Twitch & Kick Enhanced</title>
     <meta name="description" content="Purple Crow brings BTTV, FFZ, and 7TV emotes to Twitch and Kick on Safari, plus 70+ features: auto-claim, split chat, PiP, anonymous viewing, tab-complete carousel, and more. Available on the App Store.">
@@ -1232,27 +1235,32 @@
         sync();
     }
 
-    fetch(APPS_JSON_URL, { cache: 'default' })
-        .then(r => r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`)))
-        .then(data => {
-            const apps = (data && Array.isArray(data.apps)) ? data.apps : [];
-            const currentSlug = getCurrentSlug();
-            const filtered = apps.filter(a => (a.slug || '').toLowerCase() !== currentSlug);
-            if (!filtered.length) {
-                section.style.display = 'none';
-                return;
-            }
-            filtered.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
-            const frag = document.createDocumentFragment();
-            for (const app of filtered) frag.appendChild(buildCard(app));
-            track.appendChild(frag);
-            wireNav();
-        })
-        .catch(err => {
-            // eslint-disable-next-line no-console
-            console.warn('[carousel] failed to load apps.json:', err);
-            section.style.display = 'none';
-        });
+    // Idempotent render: replaces existing cards so cache + fresh paints never duplicate.
+    function render(data) {
+        const apps = (data && Array.isArray(data.apps)) ? data.apps : [];
+        const currentSlug = getCurrentSlug();
+        const filtered = apps.filter(a => (a.slug || '').toLowerCase() !== currentSlug);
+        if (!filtered.length) { if (!track.children.length) section.style.display = 'none'; return; }
+        filtered.sort((a, b) => (b.featured ? 1 : 0) - (a.featured ? 1 : 0));
+        const frag = document.createDocumentFragment();
+        for (const app of filtered) frag.appendChild(buildCard(app));
+        track.replaceChildren(frag);
+        section.style.display = '';
+        if (!render._navWired) { wireNav(); render._navWired = true; }
+        else { window.dispatchEvent(new Event('resize')); }
+    }
+    const CACHE_KEY = 'corvusApps_v1';
+    // Instant paint from last-known data, so repeat visits show the carousel with no network wait.
+    try { const c = localStorage.getItem(CACHE_KEY); if (c) render(JSON.parse(c)); } catch (_) {}
+    // Fresh data: reuse the <head>-warmed fetch when present, else fetch now; cache for next time.
+    const fresh = (window.__corvusAppsPromise && typeof window.__corvusAppsPromise.then === 'function')
+        ? window.__corvusAppsPromise
+        : fetch(APPS_JSON_URL, { cache: 'default' }).then(r => r.ok ? r.json() : null).catch(() => null);
+    fresh.then(data => {
+        if (!data) { if (!track.children.length) section.style.display = 'none'; return; }
+        try { localStorage.setItem(CACHE_KEY, JSON.stringify(data)); } catch (_) {}
+        render(data);
+    });
 })();
 
     </script>
