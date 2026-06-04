@@ -6,13 +6,103 @@
     <priority>1.0</priority>
   </url>
   <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ar/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/de/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/es/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/fr/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/hi/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/id/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/it/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ja/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ko/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/nl/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/pl/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/pt/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ru/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/sv/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/th/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/tr/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/vi/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/zh-Hant/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/privacy</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.4</priority>
   </url>
   <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/terms</loc>
     <changefreq>monthly</changefreq>
-    <priority>0.5</priority>
+    <priority>0.4</priority>
   </url>
 </urlset>
