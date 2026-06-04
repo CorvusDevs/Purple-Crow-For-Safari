@@ -11,7 +11,27 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ca/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/cs/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/da/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/de/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/el/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -21,12 +41,37 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/es-MX/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/fi/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/fr/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/he/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/hi/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/hr/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/hu/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -51,6 +96,16 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ms/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/nb/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/nl/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
@@ -66,7 +121,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ro/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/ru/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/sk/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
@@ -86,7 +151,17 @@
     <priority>0.8</priority>
   </url>
   <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/uk/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
     <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/vi/</loc>
+    <changefreq>weekly</changefreq>
+    <priority>0.8</priority>
+  </url>
+  <url>
+    <loc>https://corvusdevs.github.io/Purple-Crow-For-Safari/i18n/zh-Hans/</loc>
     <changefreq>weekly</changefreq>
     <priority>0.8</priority>
   </url>
