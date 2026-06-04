@@ -3,3 +3,13 @@ description: The ultimate Twitch experience in Safari
 theme: jekyll-theme-minimal
 url: https://corvusdevs.github.io
 baseurl: /Purple-Crow-For-Safari
+
+# Internal research / reference docs that contain JS template literals
+# (${...}) which Jekyll's Liquid parser misreads as {{ }} expressions and
+# fails the whole build on. Excluding them keeps the live site building.
+# Pages-build failure since 2026-05-29 was caused by line 586 of
+# extensions-research.md being a Lexical/Twitch code snippet, killing the
+# 33-locale SEO push when it landed.
+exclude:
+  - extensions-research.md
+  - README.md
