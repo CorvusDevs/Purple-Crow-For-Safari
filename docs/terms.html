@@ -95,7 +95,13 @@
         }
         .lang-menu button:hover { background: rgba(255,255,255,0.08); }
         .lang-menu button.active { color: var(--accent); }
-    </style>
+    
+        /* ac-footer-mobile v1 */
+        @media (max-width: 720px) {
+            body { min-height: 0; }
+            footer { padding-bottom: 24px; padding-top: 24px; }
+        }
+</style>
 </head>
 <body>
     <div class="container">
