@@ -46,6 +46,17 @@
 
 A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS, and iPadOS. All third-party emotes rendered inline (BTTV, FFZ, 7TV). Auto-claims channel points, Drops, Moments, and watch streaks. Split chat, anonymous viewing, Picture-in-Picture, forced video quality, tab-complete carousel, and 60+ more features. Zero accounts, zero telemetry, zero tracking.
 
+<!-- LATEST:START -->
+## Latest release
+
+**v3.8.2: Emote preview fix**
+
+- Emote preview no longer sticks on screen
+- Thanks to Jesse for the report
+
+Full history: [CHANGELOG.md](CHANGELOG.md)
+<!-- LATEST:END -->
+
 ## Contents
 
 - [Features](#features)
@@ -59,6 +70,11 @@ A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS,
 - **Full BTTV, FFZ, and 7TV support.** Every third-party emote rendered natively on both Twitch and Kick, with real-time updates as channels add or remove them. Animated emotes can be toggled on or off.
 - **Auto-claim everything.** Channel points, Drops, Moments, and watch streaks collected automatically across every channel you watch. Survives tab sleep and Safari restart.
 - **Tab-complete carousel.** Type a partial emote name, press Tab to cycle through inline previews. Works for native Twitch emotes, BTTV, FFZ, and 7TV alike.
+- **Unified emote autocomplete.** The emote picker and autocomplete include the platform's native emotes alongside BTTV, FFZ, and 7TV, one list instead of two competing popups.
+- **Rich emote tooltips.** Hover any emote, in chat or the picker, for a large preview, its name, and its provider.
+- **Recall sent messages.** Press the up arrow in an empty chat box to bring back your previous messages, down arrow to go forward.
+- **Chat command aliases.** Define short shortcuts that expand to longer text as you type them (for example, brb becomes be right back).
+- **Granular UI hiding.** Hide Twitch clutter all at once, or pick individually: bits and cheering, Prime and sub offers, watch streaks, or stories.
 - **Split chat.** Alternating message backgrounds in 11 color themes for easier reading on fast-moving chats.
 - **Picture-in-Picture.** One-click PiP button right in the player, on both Twitch and Kick.
 - **Force video quality.** Lock any quality from 160p to Source. Persists across channel navigation.
