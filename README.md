@@ -49,10 +49,12 @@ A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS,
 <!-- LATEST:START -->
 ## Latest release
 
-**v3.8.2: Emote preview fix**
+**v3.8.3: Picture-in-Picture controls**
 
-- Emote preview no longer sticks on screen
-- Thanks to Jesse for the report
+- Press a chosen key to toggle PiP
+- Return to the stream tab when PiP closes
+- PiP controls now work on Kick
+- Stalled 7TV connections now recover
 
 Full history: [CHANGELOG.md](CHANGELOG.md)
 <!-- LATEST:END -->
@@ -76,7 +78,7 @@ Full history: [CHANGELOG.md](CHANGELOG.md)
 - **Chat command aliases.** Define short shortcuts that expand to longer text as you type them (for example, brb becomes be right back).
 - **Granular UI hiding.** Hide Twitch clutter all at once, or pick individually: bits and cheering, Prime and sub offers, watch streaks, or stories.
 - **Split chat.** Alternating message backgrounds in 11 color themes for easier reading on fast-moving chats.
-- **Picture-in-Picture.** One-click PiP button right in the player, on both Twitch and Kick.
+- **Picture-in-Picture.** Use the player button or a configurable keyboard shortcut on Twitch and Kick, with an option to return to the stream tab when PiP closes.
 - **Force video quality.** Lock any quality from 160p to Source. Persists across channel navigation.
 - **Anonymous viewing.** Watch streams without appearing in the viewer list.
 - **OLED mode.** Pure-black background for OLED displays with a transparent chat overlay.
