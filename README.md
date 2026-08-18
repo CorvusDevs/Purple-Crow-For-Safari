@@ -49,12 +49,13 @@ A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS,
 <!-- LATEST:START -->
 ## Latest release
 
-**v3.8.3: Picture-in-Picture controls**
+**v3.8.4: Accessibility and emote improvements**
 
-- Press a chosen key to toggle PiP
-- Return to the stream tab when PiP closes
-- PiP controls now work on Kick
-- Stalled 7TV connections now recover
+- Hide AI summaries on Twitch
+- Reduce animations on Twitch and Kick
+- BTTV emotes update without a page reload
+- Emote loading recovers after temporary errors
+- Translations load only when needed
 
 Full history: [CHANGELOG.md](CHANGELOG.md)
 <!-- LATEST:END -->
