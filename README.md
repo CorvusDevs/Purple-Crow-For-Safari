@@ -49,11 +49,12 @@ A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS,
 <!-- LATEST:START -->
 ## Latest release
 
-**v3.9.2: Clearer search and activity status**
+**v3.9.3: Search and emote controls**
 
-- Ctrl+F opens Chat Search while typing
-- Command+F stays with Safari page search
-- Inactive pages now explain Purple Crow's status
+- Choose Control, Option, or Command for Chat Search
+- Command+F activates only while you are in chat
+- Emote button no longer inherits Twitch alert rings
+- Emote button returns after Twitch rebuilds chat
 
 Full history: [CHANGELOG.md](CHANGELOG.md)
 <!-- LATEST:END -->
