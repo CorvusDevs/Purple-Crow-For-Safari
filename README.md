@@ -49,12 +49,12 @@ A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS,
 <!-- LATEST:START -->
 ## Latest release
 
-**v3.9.3: Search and emote controls**
+**v3.9.4: Safer anonymous viewing**
 
-- Choose Control, Option, or Command for Chat Search
-- Command+F activates only while you are in chat
-- Emote button no longer inherits Twitch alert rings
-- Emote button returns after Twitch rebuilds chat
+- Anonymous Viewing updates instantly
+- Chat is blocked while your identity is hidden
+- Reliable pronouns with a preview in settings
+- Full Chat Search shortcut labels
 
 Full history: [CHANGELOG.md](CHANGELOG.md)
 <!-- LATEST:END -->
