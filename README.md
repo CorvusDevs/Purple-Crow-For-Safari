@@ -49,12 +49,9 @@ A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS,
 <!-- LATEST:START -->
 ## Latest release
 
-**v3.9.4: Safer anonymous viewing**
+**v3.9.5: Pronoun label fix**
 
-- Anonymous Viewing updates instantly
-- Chat is blocked while your identity is hidden
-- Reliable pronouns with a preview in settings
-- Full Chat Search shortcut labels
+- Pronouns stay single in chat
 
 Full history: [CHANGELOG.md](CHANGELOG.md)
 <!-- LATEST:END -->
