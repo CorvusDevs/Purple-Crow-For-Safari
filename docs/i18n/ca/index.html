@@ -416,59 +416,76 @@
         .how-it-works {
             max-width: 960px;
             margin: 0 auto;
-            padding: 60px 24px 100px;
+            padding: 60px 24px 88px;
         }
-
+        .how-it-works .section-title { margin-bottom: 36px; }
         .steps {
             display: grid;
             grid-template-columns: repeat(2, minmax(0, 1fr));
-            gap: 32px;
-            margin-top: 56px;
+            gap: 40px 48px;
+            margin-top: 0;
+            align-items: start;
         }
-
         .step {
-            text-align: center;
+            display: grid;
+            grid-template-columns: 36px minmax(0, 1fr);
+            column-gap: 14px;
+            text-align: start;
             position: relative;
         }
-
         .step-num {
-            width: 48px;
-            height: 48px;
-            border-radius: 14px;
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
             background: var(--accent-dim);
-            color: var(--accent);
-            font-size: 20px;
+            color: var(--accent-light);
+            font-size: 16px;
             font-weight: 700;
             display: flex;
             align-items: center;
             justify-content: center;
-            margin: 0 auto 18px;
             border: 1px solid rgba(145, 71, 255, 0.2);
         }
-
         .step h3 {
+            align-self: center;
             font-size: 18px;
             font-weight: 600;
-            margin-bottom: 8px;
+            line-height: 1.4;
         }
-
         .step p {
-            font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
+            grid-column: 2;
+            margin-top: 14px;
+            font-size: 15px;
+            color: #b4b0bd;
+            line-height: 1.7;
+            overflow-wrap: anywhere;
         }
-
-        .step p + p { margin-top: 12px; }
-
+        .step p + p { margin-top: 16px; }
+        .step p[data-i18n="setup_enable_mobile"],
+        .step p[data-i18n="setup_allow_mobile"] {
+            padding-top: 14px;
+            border-top: 1px solid var(--border);
+        }
+        .step p[data-i18n="setup_enable_17"],
+        .step p[data-i18n="setup_allow_missing"] {
+            font-size: 14px;
+            padding-inline-start: 12px;
+            border-inline-start: 2px solid rgba(191, 148, 255, 0.4);
+        }
         .setup-note {
-            margin-top: 28px;
+            margin: 32px auto 0;
+            max-width: 720px;
+            padding: 16px 20px;
+            border-top: 1px solid var(--border);
             text-align: center;
             font-size: 14px;
-            color: var(--text-secondary);
-            line-height: 1.6;
+            color: #b4b0bd;
+            line-height: 1.65;
         }
-
         #how:lang(ar), #how:lang(he) { direction: rtl; }
+        @media (prefers-reduced-motion: reduce) {
+            #how .reveal { opacity: 1; transform: none; transition: none; }
+        }
 
         /* ── Why Section ── */
         .why {
@@ -504,47 +521,70 @@
 
         /* Purple Crow troubleshooting */
         .troubleshooting {
-            max-width: 960px;
+            max-width: 808px;
             margin: 0 auto;
-            padding: 0 24px 80px;
+            padding: 0 24px 40px;
         }
+        .troubleshooting .section-title { margin-bottom: 14px; }
         .troubleshooting-intro {
-            color: var(--text-secondary);
-            line-height: 1.65;
-            margin-bottom: 24px;
+            max-width: 560px;
+            margin: 0 auto 28px;
+            text-align: center;
+            font-size: 15px;
+            color: #b4b0bd;
+            line-height: 1.7;
         }
-        .troubleshooting details {
+        .troubleshooting-list {
             background: var(--surface);
             border: 1px solid var(--border);
-            border-radius: 12px;
-            margin-top: 12px;
+            border-radius: 16px;
         }
+        .troubleshooting details + details { border-top: 1px solid var(--border); }
         .troubleshooting summary {
-            padding: 20px;
+            padding: 20px 24px;
             font-size: 16px;
+            line-height: 1.5;
             font-weight: 600;
             cursor: pointer;
             overflow-wrap: anywhere;
+            border-radius: 12px;
         }
+        .troubleshooting summary::marker { color: var(--accent-light); }
+        .troubleshooting summary:hover { background: var(--surface-2); }
+        .troubleshooting details[open] summary { color: var(--accent-light); }
         .troubleshooting summary:focus-visible {
-            outline: 2px solid #9147ff;
+            outline: 2px solid var(--accent-light);
             outline-offset: -4px;
         }
         .troubleshooting details p {
-            padding: 0 20px 20px;
-            color: var(--text-secondary);
-            font-size: 14px;
-            line-height: 1.65;
+            padding: 0 24px 24px;
+            max-width: 72ch;
+            color: #b4b0bd;
+            font-size: 15px;
+            line-height: 1.7;
             overflow-wrap: anywhere;
         }
         #help:lang(ar), #help:lang(he) { direction: rtl; }
 
         /* ── Requirements ── */
         .req {
+            max-width: 760px;
+            margin: 0 auto 60px;
+            padding: 20px 24px 0;
+            border-top: 1px solid var(--border);
             text-align: center;
-            padding: 0 24px 60px;
             font-size: 14px;
-            color: var(--text-secondary);
+            line-height: 1.7;
+            color: #b4b0bd;
+        }
+        @media (max-width: 600px) {
+            .steps { gap: 32px; }
+            .step { grid-template-columns: 32px minmax(0, 1fr); column-gap: 12px; }
+            .step-num { width: 32px; height: 32px; border-radius: 9px; }
+            .step p { grid-column: 1 / -1; }
+            .troubleshooting summary { padding: 18px; }
+            .troubleshooting details p { padding: 0 18px 20px; }
+            .req { margin-inline: 24px; padding-inline: 0; }
         }
 
         /* ── Footer ── */
@@ -1143,6 +1183,7 @@
     <section class="troubleshooting" id="help" aria-labelledby="help-title">
         <h2 class="section-title" id="help-title" data-i18n="troubleshooting_title">Necessites ajuda?</h2>
         <p class="troubleshooting-intro" data-i18n="troubleshooting_intro">Comença amb aquestes comprovacions si Purple Crow no funciona com esperes.</p>
+        <div class="troubleshooting-list">
         <details>
             <summary data-i18n="troubleshooting_missing_title">Purple Crow no apareix</summary>
             <p data-i18n="troubleshooting_missing">Instal·la Purple Crow i obre l’app una vegada. Al Mac, mantén-la a Aplicacions i revisa Safari &gt; Configuració &gt; Extensions. A l’iPhone o l’iPad, revisa la configuració de les extensions de Safari.</p>
@@ -1159,6 +1200,7 @@
             <summary data-i18n="troubleshooting_profiles_title">Només funciona en un perfil de Safari</summary>
             <p data-i18n="troubleshooting_profiles">Activa Purple Crow en cada perfil de Safari que utilitzis. Al Mac: Safari &gt; Configuració &gt; Perfils &gt; el teu perfil &gt; Extensions.</p>
         </details>
+        </div>
     </section>
 
     <!-- Requirements -->
