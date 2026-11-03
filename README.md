@@ -7,7 +7,7 @@
 **BTTV, FrankerFaceZ, and 7TV emotes for Twitch and Kick, plus 70+ quality-of-life features**
 
 <p>
-  <img src="https://img.shields.io/badge/macOS-14.0+-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 14.0+">
+  <img src="https://img.shields.io/badge/macOS-12.0+-000000?style=flat-square&logo=apple&logoColor=white" alt="macOS 12.0+">
   <img src="https://img.shields.io/badge/iOS-17.0+-000000?style=flat-square&logo=apple&logoColor=white" alt="iOS 17.0+">
   <img src="https://img.shields.io/badge/iPadOS-17.0+-000000?style=flat-square&logo=apple&logoColor=white" alt="iPadOS 17.0+">
   <img src="https://img.shields.io/badge/Languages-33-4CAF50?style=flat-square" alt="33 Languages">
@@ -44,16 +44,17 @@
 
 ---
 
-A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS, and iPadOS. All third-party emotes rendered inline (BTTV, FFZ, 7TV). Auto-claims channel points, Drops, Moments, and watch streaks. Split chat, anonymous viewing, Picture-in-Picture, forced video quality, tab-complete carousel, and 60+ more features. Zero accounts, zero telemetry, zero tracking.
+A native **Safari Web Extension** for **Twitch** and **Kick** across macOS, iOS, and iPadOS. All third-party emotes rendered inline (BTTV, FFZ, 7TV). Auto-claims channel points, Drops, Moments, and watch streaks. Split chat, anonymous viewing, Picture-in-Picture, forced video quality, tab-complete carousel, and more, with 70+ quality-of-life features in total. Zero accounts, zero telemetry, zero tracking.
 
 <!-- LATEST:START -->
 ## Latest release
 
-**v3.9.5: Pronoun label fix**
+**v3.9.8, October 19, 2026**
 
-- Pronouns stay single in chat
+- Channel previews follow settings immediately.
+- Kick chat handles reused message rows reliably.
 
-Full history: [CHANGELOG.md](CHANGELOG.md)
+[App Store](https://apps.apple.com/app/id6761481948) · [Earlier releases](https://corvusdevs.github.io/Purple-Crow-For-Safari/#changelog)
 <!-- LATEST:END -->
 
 ## Contents

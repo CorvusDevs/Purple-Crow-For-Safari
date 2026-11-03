@@ -1,0 +1,66 @@
+{
+  "appStoreId": 6761481948,
+  "sourcePage": "https://apps.apple.com/us/app/purple-crow-for-safari/id6761481948?uo=4",
+  "items": [
+    {
+      "platform": "Mac",
+      "description": "Third-party emotes in Twitch chat",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/96/e9/77/96e9775d-561f-4425-4200-270289b1a2a0/01-emotes_framed.png/2880x1800bb.jpg",
+      "sourceWidth": 2880,
+      "sourceHeight": 1800,
+      "asset": "assets/gallery/mac-1.jpg",
+      "width": 1440,
+      "height": 900,
+      "bytes": 129220,
+      "sha256": "b4c6ac4ec2419d6b72ac785a88e4695be5ef6743038d9b6e00414010f0a43776"
+    },
+    {
+      "platform": "Mac",
+      "description": "Purple Crow settings",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource221/v4/b5/9b/51/b59b51eb-2a0a-63a2-e88a-6f2a44ae060f/03-settings_framed.png/2880x1800bb.jpg",
+      "sourceWidth": 2880,
+      "sourceHeight": 1800,
+      "asset": "assets/gallery/mac-3.jpg",
+      "width": 1440,
+      "height": 900,
+      "bytes": 84117,
+      "sha256": "dc4ed7f01fd227bbc9937de855495c7ed607a1a062fdaae0aa8e9ebb7bbb1b2b"
+    },
+    {
+      "platform": "Mac",
+      "description": "Kick chat with Purple Crow",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/a0/36/93/a0369317-fad0-a9f8-1234-fea7a6890587/05-kick_framed.png/2880x1800bb.jpg",
+      "sourceWidth": 2880,
+      "sourceHeight": 1800,
+      "asset": "assets/gallery/mac-5.jpg",
+      "width": 1440,
+      "height": 900,
+      "bytes": 116082,
+      "sha256": "293d458b52ab27bd0b3ad36a1ff4bac5a4bf8dbb79a8ad06f5195d6bcfa5c0ed"
+    },
+    {
+      "platform": "iPhone",
+      "description": "Emote picker on iPhone",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/df/48/8a/df488afa-a084-bb9d-d671-9abda7ce8ec2/02-picker_framed.png/1320x2868bb.jpg",
+      "sourceWidth": 1320,
+      "sourceHeight": 2868,
+      "asset": "assets/gallery/phone-2.jpg",
+      "width": 663,
+      "height": 1440,
+      "bytes": 109638,
+      "sha256": "4f2ef2e1de007f140a1b19fcb28d3f85c7886b7cfe1172925d652aeb4b5f3fef"
+    },
+    {
+      "platform": "iPad",
+      "description": "Player controls on iPad",
+      "source": "https://is1-ssl.mzstatic.com/image/thumb/PurpleSource211/v4/44/52/2d/44522da1-0861-ef82-e04c-3a1998d7b825/04-player_framed.png/2732x2048bb.jpg",
+      "sourceWidth": 2732,
+      "sourceHeight": 2048,
+      "asset": "assets/gallery/pad-4.jpg",
+      "width": 1440,
+      "height": 1079,
+      "bytes": 133606,
+      "sha256": "c4739cb4c8990d20d91ce335afd4cdad9cdb5991342c342379153befd5043980"
+    }
+  ]
+}

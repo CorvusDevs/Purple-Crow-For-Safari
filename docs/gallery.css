@@ -1,0 +1,12 @@
+/* Official product screenshots, locally hosted. */
+.official-gallery{width:min(1120px,calc(100% - 40px));margin:64px auto;padding:24px 0;color:inherit;text-align:start}
+.official-gallery h2{font-size:clamp(1.8rem,5vw,2.7rem);line-height:1.2;margin:0 0 28px;letter-spacing:-.02em}
+.official-gallery-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:24px;align-items:start}
+.official-gallery figure{min-width:0;margin:0;border:1px solid currentColor;border-color:color-mix(in srgb,currentColor 18%,transparent);border-radius:18px;overflow:hidden;background:color-mix(in srgb,currentColor 4%,transparent)}
+.official-gallery figure:first-child{grid-column:1/-1}
+.official-gallery a{display:block;color:inherit;min-height:44px}
+.official-gallery a:focus-visible{outline:3px solid currentColor;outline-offset:-4px}
+.official-gallery img{display:block;width:100%;height:auto;max-height:580px;object-fit:contain}
+.official-gallery figcaption{display:flex;flex-wrap:wrap;gap:8px 14px;padding:14px 18px;font:inherit;font-size:.9rem;line-height:1.5}
+.official-gallery figcaption span{opacity:.8}
+@media(max-width:600px){.official-gallery{width:calc(100% - 32px);margin:44px auto}.official-gallery-grid{grid-template-columns:1fr;gap:18px}.official-gallery figure:first-child{grid-column:auto}.official-gallery img{max-height:none}}
